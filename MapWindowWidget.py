@@ -4,6 +4,7 @@ import pyqtgraph as pg
 import geopandas as gpd
 from shapely.geometry import Polygon, MultiPolygon
 from Plane import Plane
+from Projectile import Projectile
 from SimulationClock import SimulationClock
 
 class MapWindowWidget(QtWidgets.QWidget):
@@ -72,7 +73,7 @@ class MapWindowWidget(QtWidgets.QWidget):
 
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.animate_plane)
-        self.timer.start(16) #16 ms ~60 fps
+        # self.timer.start(16) #16 ms ~60 fps
 
         self.points = []
 
@@ -128,13 +129,32 @@ class MapWindowWidget(QtWidgets.QWidget):
 
         self.view.addItem(self.plane_item)
 
+        self.timer.start(16)
         self.clock = SimulationClock()
         self.plane = plane
+
+    def add_projectile(self, projectile: Projectile):
+        lat, lon = projectile.start_point.latitude, projectile.start_point.longitude
+        self.projectile_item = pg.ScatterPlotItem(
+            x=[lon],
+            y=[lat],
+            size=8,
+            brush='yellow',
+            pen=pg.mkPen('white', width=1)
+        )
+
+        self.view.addItem(self.projectile_item)
+
+        self.projectile = projectile
 
     def update_plane_pos(self, t):
         lat, lon = self.plane.get_plane_position(t)
         self.plane_item.setData(x=[lon], y=[lat])
         self.change_time_label(t)
+
+    def update_projectile_pos(self, t):
+        lat, lon = self.projectile.calculate_current_cords(t)
+        self.projectile_item.setData(x=[lon], y=[lat])
 
     def animate_plane(self):
         if not (hasattr(self, "plane") or hasattr(self, "clock")):
@@ -143,9 +163,13 @@ class MapWindowWidget(QtWidgets.QWidget):
             return
         
         t = self.clock.now()
-        if t > self.plane.T:
-            return
+        # if t > self.plane.T:
+        #     return
         self.update_plane_pos(t)
+
+        if hasattr(self, "projectile"):
+            self.update_projectile_pos(t)
+
         self.change_slider((t / self.plane.T) * 10000)
 
     def toggle_pause(self):
@@ -178,6 +202,7 @@ class MapWindowWidget(QtWidgets.QWidget):
             self.view.removeItem(p)
         self.points.clear()
 
+        self.timer.stop()
         self.view.removeItem(self.plane_item)
         delattr(self, 'plane_item')
         delattr(self, 'plane')

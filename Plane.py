@@ -31,9 +31,13 @@ class Plane:
 
         dt = end_point.time - start_point.time
         self.T = dt.total_seconds()
+        print(self.T)
+
+        self.R = 6371e3 #promien Ziemi w metrach
         
     def get_plane_position(self, t):
-        f = np.clip(t / self.T, 0, 1)
+        # f = np.clip(t / self.T, 0, 1)
+        f = t / self.T
 
         A = np.sin((1-f)*self.delta) / self.sin_delta
         B = np.sin(f*self.delta) / self.sin_delta
@@ -45,3 +49,14 @@ class Plane:
         lat = np.degrees(np.arctan2(z, np.sqrt(x**2 + y**2)))
         lon = np.degrees(np.arctan2(y, x))
         return lat, lon
+    
+    def calculate_mean_velocity(self):
+        delta_lat = self.end_lat_rad - self.start_lat_rad
+        delta_lon = self.end_lon_rad - self.start_lon_rad
+        #Haversine formula
+        a = np.sin(delta_lat/2) ** 2 + np.cos(self.start_lat_rad) * np.cos(self.end_lat_rad) * np.sin(delta_lon/2) ** 2
+        c = 2 * np.atan2(np.sqrt(a), np.sqrt(1-a))
+
+        d = self.R * c
+
+        return d / self.T

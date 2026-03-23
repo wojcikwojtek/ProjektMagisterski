@@ -4,7 +4,7 @@ class SimulationClock:
     def __init__(self):
         self.start_real = time.time()
         self.paused_time = 0.0
-        self.speed = 100.0
+        self.speed = 2.0
         self.paused = False
 
     def now(self):

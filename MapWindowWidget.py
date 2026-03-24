@@ -6,6 +6,8 @@ from shapely.geometry import Polygon, MultiPolygon
 from Plane import Plane
 from Projectile import Projectile
 from SimulationClock import SimulationClock
+from MapViewBox import MapViewBox
+from Point import Point
 
 class MapWindowWidget(QtWidgets.QWidget):
     go_back = QtCore.Signal()
@@ -54,18 +56,21 @@ class MapWindowWidget(QtWidgets.QWidget):
         self.pause_button.clicked.connect(self.toggle_pause)
         self.slider.sliderMoved.connect(self.slider_moved)
 
-        self.view = self.graph_widget.addViewBox()
-        self.view.setAspectLocked(True)
-        self.view.setRange(xRange=(-180, 180),
-                           yRange=(-90, 90))
-        self.view.setLimits(
-            xMin=-180, xMax=180,
-            yMin=-90, yMax=90,
-            minXRange=1,
-            maxXRange=360,
-            minYRange=1,
-            maxYRange=180
-        )
+        # self.view : pg.ViewBox = self.graph_widget.addViewBox()
+        # self.view.setAspectLocked(True)
+        # self.view.setRange(xRange=(-180, 180),
+        #                    yRange=(-90, 90))
+        # self.view.setLimits(
+        #     xMin=-180, xMax=180,
+        #     yMin=-90, yMax=90,
+        #     minXRange=1,
+        #     maxXRange=360,
+        #     minYRange=1,
+        #     maxYRange=180
+        # )
+        self.view = MapViewBox()
+        self.graph_widget.addItem(self.view)
+        self.view.clicked.connect(self.clicked_on_map)
         
         self.graph_widget.setBackground('#0f172a')
 
@@ -207,3 +212,11 @@ class MapWindowWidget(QtWidgets.QWidget):
         delattr(self, 'plane_item')
         delattr(self, 'plane')
         delattr(self, 'clock')
+
+    def clicked_on_map(self, lon, lat):
+        point = Point(lat, lon, None)
+        if hasattr(self, 'projectile'):
+            delattr(self, 'projectile')
+            self.view.removeItem(self.projectile_item)
+
+        self.add_projectile(Projectile(point, self.plane))

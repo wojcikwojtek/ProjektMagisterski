@@ -39,7 +39,7 @@ class Projectile():
         a_hat = A / np.linalg.norm(A)
         b_hat = B / np.linalg.norm(B)
 
-        normal = np.cross(b_hat, a_hat)
+        normal = np.cross(a_hat, b_hat)
         normal /= np.linalg.norm(normal)
 
         v_hat = np.cross(normal, a_hat)

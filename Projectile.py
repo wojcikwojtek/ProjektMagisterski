@@ -36,17 +36,25 @@ class Projectile():
         A = self.latlon_to_vector(self.intercepted_plane.start_point.latitude, self.intercepted_plane.start_point.longitude)
         B = self.latlon_to_vector(self.intercepted_plane.end_point.latitude, self.intercepted_plane.end_point.longitude)
 
-        a_hat = A / np.linalg.norm(A)
-        b_hat = B / np.linalg.norm(B)
+        # a_hat = A / np.linalg.norm(A)
+        # b_hat = B / np.linalg.norm(B)
 
-        normal = np.cross(a_hat, b_hat)
-        normal /= np.linalg.norm(normal)
+        # normal = np.cross(a_hat, b_hat)
+        # normal /= np.linalg.norm(normal)
 
-        v_hat = np.cross(normal, a_hat)
-        v_hat /= np.linalg.norm(v_hat)
+        # # v_hat = np.cross(normal, a_hat)
+        # v_hat = np.cross(a_hat, normal)
+        # v_hat /= np.linalg.norm(v_hat)
 
-        return self.intercepted_plane.calculate_mean_velocity() * v_hat
+        # return self.intercepted_plane.calculate_mean_velocity() * v_hat
+        A_unit = A / np.linalg.norm(A)
+        B_unit = B / np.linalg.norm(B)
+
+        w = B_unit - np.dot(A_unit, B_unit) * A_unit 
+        W = w / np.linalg.norm(w)
+        return self.intercepted_plane.calculate_mean_velocity() * W
     
+    #Narazie dla a biore punkt poczatkowy potestowac co jak dam kropke w trakcie lotu i czy tego nie zmienic na aktualny punkt
     def calculate_intercept_angle(self):
         #zakladam ze omega1 = omega2 czyli ze poruszaja sie z ta sama predkoscia
         a = self.latlon_to_vector(self.intercepted_plane.start_point.latitude, self.intercepted_plane.start_point.longitude)
@@ -55,7 +63,18 @@ class Projectile():
 
         u1 = self.find_scalar_eq_zero(self.b)
         u2 = 1/self.R * (np.cross(self.b, u1))
+        # u3 = self.b
+        # u2 = np.cross(u3, u1)
+        # u2 /= np.linalg.norm(u2)
         u3 = self.b / self.R
+
+        print("u1 * u2: ", np.dot(u1, u2))
+        print("u1 * u3: ", np.dot(u1, u3))
+        print("u2 * u3: ", np.dot(u2, u3))
+
+        print("u1 * u1: ", np.dot(u1, u1))
+        print("u2 * u2: ", np.dot(u2, u2))
+        print("u3 * u3: ", np.dot(u3, u3))
 
         R0 = np.column_stack((u1, u2, u3))
 
@@ -90,7 +109,7 @@ class Projectile():
         # self.intercept_time = theta1 / self.omega #czas kolizji
         print(self.intercept_time)
 
-        self.theta = np.atan2(U[0]*np.cos(theta1) + W[0]*np.sin(theta1), U[1]*np.cos(theta1) + W[1]*np.sin(theta1))
+        self.theta = np.arctan2(U[1]*np.cos(theta1) + W[1]*np.sin(theta1), U[0]*np.cos(theta1) + W[0]*np.sin(theta1))
         self.v2_hat = np.cos(self.theta) * u1 + np.sin(self.theta) * u2
     
     def calculate_current_cords(self, t):

@@ -168,14 +168,47 @@ class MapWindowWidget(QtWidgets.QWidget):
             return
         
         t = self.clock.now()
-        # if t > self.plane.T:
-        #     return
+
+        has_projectile = hasattr(self, "projectile")
+        if has_projectile:
+            if t > self.projectile.intercept_time:
+                print(t)
+                return
+
+        if t > self.plane.T:
+            return
+        
         self.update_plane_pos(t)
 
-        if hasattr(self, "projectile"):
+        if has_projectile:
             self.update_projectile_pos(t)
+            #Pomyslec czy check_collision jest w ogole potrzebne jak zatrzymuje sie kiedy osiagne intercept time
+            self.check_collison()
 
         self.change_slider((t / self.plane.T) * 10000)
+
+    def check_collison(self):
+        if not (hasattr(self, "plane") or hasattr(self, "projectile")):
+            return
+        
+        tolerance = 0.003
+
+        lat_close = abs(self.plane.current_lat - self.projectile.current_lat) < tolerance
+        lon_close = abs(self.plane.current_lon - self.projectile.current_lon) < tolerance
+
+        # t = self.clock.now()
+        # print("Czas: ", t)
+        # print(self.plane.current_lat, self.plane.current_lon)
+        # print(self.projectile.current_lat, self.projectile.current_lon)
+        # print(abs(self.plane.current_lat - self.projectile.current_lat), abs(self.plane.current_lat - self.projectile.current_lon))
+        
+        if lat_close and lon_close:
+            # self.timer.stop()
+            print("Kolizja")
+            t = self.clock.now()
+            print("Czas: ", t)
+            print(self.plane.current_lat, self.plane.current_lon)
+            print(self.projectile.current_lat, self.projectile.current_lon)
 
     def toggle_pause(self):
         if(self.clock.paused):
@@ -196,6 +229,12 @@ class MapWindowWidget(QtWidgets.QWidget):
 
     def slider_moved(self, value):
         t = (value * self.plane.T) / 10000
+        if hasattr(self, "projectile"):
+            self.update_projectile_pos(t)
+            if t >= self.projectile.intercept_time:
+                t = self.projectile.intercept_time
+                self.change_slider((t / self.plane.T) * 10000)
+
         self.update_plane_pos(t)
         self.clock.set_value(t)
 
@@ -212,6 +251,10 @@ class MapWindowWidget(QtWidgets.QWidget):
         delattr(self, 'plane_item')
         delattr(self, 'plane')
         delattr(self, 'clock')
+
+        if hasattr(self, 'projectile'):
+            self.view.removeItem(self.projectile_item)
+            delattr(self, 'projectile')
 
     def clicked_on_map(self, lon, lat):
         point = Point(lat, lon, None)

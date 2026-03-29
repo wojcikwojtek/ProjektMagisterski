@@ -46,9 +46,9 @@ class Plane:
         y = A*self.cos_start_lat*self.sin_start_lon + B*self.cos_end_lat*self.sin_end_lon
         z = A*self.sin_start_lat + B*self.sin_end_lat
 
-        lat = np.degrees(np.arctan2(z, np.sqrt(x**2 + y**2)))
-        lon = np.degrees(np.arctan2(y, x))
-        return lat, lon
+        self.current_lat = np.degrees(np.arctan2(z, np.sqrt(x**2 + y**2)))
+        self.current_lon = np.degrees(np.arctan2(y, x))
+        return self.current_lat, self.current_lon
     
     def calculate_mean_velocity(self):
         delta_lat = self.end_lat_rad - self.start_lat_rad

@@ -118,7 +118,7 @@ class Projectile():
         
         x, y, z = self.b * np.cos(self.omega*(t-self.t1)) + self.R * self.v2_hat * np.sin(self.omega*(t-self.t1))
 
-        lat = np.arctan2(z, np.sqrt(x**2 + y**2))
-        lon = np.arctan2(y, x)
+        self.current_lat = np.degrees(np.arctan2(z, np.sqrt(x**2 + y**2)))
+        self.current_lon = np.degrees(np.arctan2(y, x))
 
-        return np.degrees(lat), np.degrees(lon)
+        return self.current_lat, self.current_lon

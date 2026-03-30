@@ -30,6 +30,15 @@ class MapWindowWidget(QtWidgets.QWidget):
 
         self.back_button.clicked.connect(self.go_back.emit)
 
+        self.starting_speed = 1
+        self.spinbox = QtWidgets.QSpinBox()
+        self.spinbox.setRange(1, 100)
+        self.spinbox.setValue(self.starting_speed)
+        self.spinbox.setSingleStep(1)
+        top_bar.addWidget(self.spinbox)
+
+        self.spinbox.valueChanged.connect(self.on_spinbox_value_changed)
+
         top_bar.addStretch()
 
         self.graph_widget = pg.GraphicsLayoutWidget()
@@ -135,7 +144,7 @@ class MapWindowWidget(QtWidgets.QWidget):
         self.view.addItem(self.plane_item)
 
         self.timer.start(16)
-        self.clock = SimulationClock()
+        self.clock = SimulationClock(self.starting_speed)
         self.plane = plane
 
     def add_projectile(self, projectile: Projectile):
@@ -172,7 +181,6 @@ class MapWindowWidget(QtWidgets.QWidget):
         has_projectile = hasattr(self, "projectile")
         if has_projectile:
             if t > self.projectile.intercept_time:
-                print(t)
                 return
 
         if t > self.plane.T:
@@ -180,7 +188,7 @@ class MapWindowWidget(QtWidgets.QWidget):
         
         self.update_plane_pos(t)
 
-        if has_projectile:
+        if has_projectile and t >= self.projectile.t1:
             self.update_projectile_pos(t)
             #Pomyslec czy check_collision jest w ogole potrzebne jak zatrzymuje sie kiedy osiagne intercept time
             self.check_collison()
@@ -191,7 +199,7 @@ class MapWindowWidget(QtWidgets.QWidget):
         if not (hasattr(self, "plane") or hasattr(self, "projectile")):
             return
         
-        tolerance = 0.003
+        tolerance = 0.005
 
         lat_close = abs(self.plane.current_lat - self.projectile.current_lat) < tolerance
         lon_close = abs(self.plane.current_lon - self.projectile.current_lon) < tolerance
@@ -230,7 +238,8 @@ class MapWindowWidget(QtWidgets.QWidget):
     def slider_moved(self, value):
         t = (value * self.plane.T) / 10000
         if hasattr(self, "projectile"):
-            self.update_projectile_pos(t)
+            if t >= self.projectile.t1: 
+                self.update_projectile_pos(t)
             if t >= self.projectile.intercept_time:
                 t = self.projectile.intercept_time
                 self.change_slider((t / self.plane.T) * 10000)
@@ -262,4 +271,11 @@ class MapWindowWidget(QtWidgets.QWidget):
             delattr(self, 'projectile')
             self.view.removeItem(self.projectile_item)
 
-        self.add_projectile(Projectile(point, self.plane))
+        t = self.clock.now()
+        velocity = 2 * self.plane.calculate_mean_velocity()
+        self.add_projectile(Projectile(point, self.plane, t, velocity))
+
+    def on_spinbox_value_changed(self, value):
+        current_time = self.clock.now()
+        self.clock.set_value(current_time)
+        self.clock.speed = value

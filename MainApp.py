@@ -3,7 +3,7 @@ from MapWindowWidget import MapWindowWidget
 from Point import Point
 from datetime import datetime
 from Plane import Plane
-from Projectile import Projectile
+from Globe3DWidget import Globe3DWidget
 
 class MainApp(QtWidgets.QMainWindow):
     flights_data = [
@@ -44,8 +44,12 @@ class MainApp(QtWidgets.QMainWindow):
 
         self.map_screen = MapWindowWidget()
         self.stack.addWidget(self.map_screen)
-
         self.map_screen.go_back.connect(self.show_start_screen)
+
+        self.globe_screen = Globe3DWidget()
+        self.stack.addWidget(self.globe_screen)
+
+        self.use_3d = True
 
     def create_start_screen(self):
         widget = QtWidgets.QWidget()
@@ -83,14 +87,27 @@ class MainApp(QtWidgets.QMainWindow):
         flight_data = item.data(QtCore.Qt.UserRole)
 
         plane = Plane(flight_data['from_point'], flight_data['to_point'])
-        self.map_screen.add_point(flight_data['from_point'].latitude, flight_data['from_point'].longitude)
-        self.map_screen.add_point(flight_data['to_point'].latitude, flight_data['to_point'].longitude)
-        # self.map_screen.add_plane(Plane(flight_data['from_point'], flight_data['to_point']))
-        self.map_screen.add_plane(plane)
+        if self.use_3d:
+            self.globe_screen.add_point(
+                flight_data['from_point'].latitude, 
+                flight_data['from_point'].longitude
+            )
+            self.globe_screen.add_point(
+                flight_data['to_point'].latitude, 
+                flight_data['to_point'].longitude
+            )
 
-        # zabrze = Point(38.71667, -9.13333, datetime(2026, 3, 23, 18, 0, 0))      
-        # projectile = Projectile(zabrze, plane)
-        # self.map_screen.add_projectile(projectile)
-        #calculate_intercept_path(plane, Point(50.32492, 18.78576, datetime(2026, 3, 23, 18, 0, 0)))
+            self.stack.setCurrentWidget(self.globe_screen)
+            
+        else:
+            self.map_screen.add_point(
+                flight_data['from_point'].latitude, 
+                flight_data['from_point'].longitude
+            )
+            self.map_screen.add_point(
+                flight_data['to_point'].latitude, 
+                flight_data['to_point'].longitude
+            )
+            self.map_screen.add_plane(plane)
 
-        self.stack.setCurrentIndex(1)
+            self.stack.setCurrentWidget(self.map_screen)

@@ -96,6 +96,7 @@ class MainApp(QtWidgets.QMainWindow):
                 flight_data['to_point'].latitude, 
                 flight_data['to_point'].longitude
             )
+            self.globe_screen.add_plane(plane)
 
             self.stack.setCurrentWidget(self.globe_screen)
             

@@ -1,9 +1,11 @@
-from PySide6 import QtWidgets
+from PySide6 import QtWidgets, QtCore 
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DCore import Qt3DCore
 from PySide6.QtGui import QVector3D, QColor
 from PySide6.Qt3DRender import Qt3DRender
 import numpy as np
+from Plane import Plane
+from SimulationClock import SimulationClock
 
 class Globe3DWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -22,6 +24,12 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.create_camera()
         self.create_globe()
         self.create_light()
+
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.animate_plane)
+
+        self.starting_speed = 100
+        self.points = []
 
     def create_camera(self):
         camera = self.view.camera()
@@ -86,3 +94,45 @@ class Globe3DWidget(QtWidgets.QWidget):
         entity.addComponent(mesh)
         entity.addComponent(material)
         entity.addComponent(transform)
+        self.points.append(entity)
+
+    def add_plane(self, plane: Plane):
+        entity = Qt3DCore.QEntity(self.root)
+
+        mesh = Qt3DExtras.QSphereMesh(self.root)
+        mesh.setRadius(0.21)
+
+        material = Qt3DExtras.QPhongMaterial(self.root)
+        material.setDiffuse(QColor(0, 0, 255))
+
+        self.plane_transform = Qt3DCore.QTransform(self.root)
+
+        lat, lon = plane.get_plane_position(0)
+        pos = self.latlon_to_xyz(lat, lon, self.radius)
+        self.plane_transform.setTranslation(pos)
+
+        entity.addComponent(mesh)
+        entity.addComponent(material)
+        entity.addComponent(self.plane_transform)
+        
+        self.timer.start(16)
+        self.clock = SimulationClock(self.starting_speed)
+        self.plane = plane
+
+    def update_plane_pos(self, t):
+        lat, lon = self.plane.get_plane_position(t)
+        pos = self.latlon_to_xyz(lat, lon, self.radius)
+        self.plane_transform.setTranslation(pos)
+
+    def animate_plane(self):
+        if not (hasattr(self, "plane") or hasattr(self, "clock")):
+            return
+        if self.clock.paused:
+            return
+        
+        t = self.clock.now()
+
+        if t > self.plane.T:
+            return
+
+        self.update_plane_pos(t)

@@ -1,4 +1,5 @@
 from Point import Point
+from PySide6.QtGui import QVector3D
 import numpy as np
 
 class Plane:

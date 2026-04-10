@@ -272,7 +272,7 @@ class MapWindowWidget(QtWidgets.QWidget):
             self.view.removeItem(self.projectile_item)
 
         t = self.clock.now()
-        velocity = 2 * self.plane.calculate_mean_velocity()
+        velocity = 1 * self.plane.calculate_mean_velocity()
         self.add_projectile(Projectile(point, self.plane, t, velocity))
 
     def on_spinbox_value_changed(self, value):

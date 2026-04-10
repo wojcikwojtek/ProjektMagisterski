@@ -25,10 +25,10 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.create_globe()
         self.create_light()
 
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.animate_plane)
+        # self.timer = QtCore.QTimer()
+        # self.timer.timeout.connect(self.animate_plane)
 
-        self.starting_speed = 100
+        # self.starting_speed = 100
         self.points = []
 
     def create_camera(self):
@@ -115,24 +115,23 @@ class Globe3DWidget(QtWidgets.QWidget):
         entity.addComponent(material)
         entity.addComponent(self.plane_transform)
         
-        self.timer.start(16)
-        self.clock = SimulationClock(self.starting_speed)
-        self.plane = plane
+        # self.timer.start(16)
+        # self.clock = SimulationClock(self.starting_speed)
+        # self.plane = plane
 
-    def update_plane_pos(self, t):
-        lat, lon = self.plane.get_plane_position(t)
+    def update_plane_pos(self, lat, lon):
         pos = self.latlon_to_xyz(lat, lon, self.radius)
         self.plane_transform.setTranslation(pos)
 
-    def animate_plane(self):
-        if not (hasattr(self, "plane") or hasattr(self, "clock")):
-            return
-        if self.clock.paused:
-            return
+    # def animate_plane(self):
+    #     if not (hasattr(self, "plane") or hasattr(self, "clock")):
+    #         return
+    #     if self.clock.paused:
+    #         return
         
-        t = self.clock.now()
+    #     t = self.clock.now()
 
-        if t > self.plane.T:
-            return
+    #     if t > self.plane.T:
+    #         return
 
-        self.update_plane_pos(t)
+    #     self.update_plane_pos(t)

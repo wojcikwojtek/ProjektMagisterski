@@ -1,9 +1,11 @@
 from PySide6 import QtWidgets, QtCore
 from MapWindowWidget import MapWindowWidget
+from WindowWidget import WindowWidget
 from Point import Point
 from datetime import datetime
 from Plane import Plane
 from Globe3DWidget import Globe3DWidget
+from MapWidget import MapWidget
 
 class MainApp(QtWidgets.QMainWindow):
     flights_data = [
@@ -42,14 +44,15 @@ class MainApp(QtWidgets.QMainWindow):
         self.start_screen = self.create_start_screen()
         self.stack.addWidget(self.start_screen)
 
-        self.map_screen = MapWindowWidget()
+        # self.map_screen = MapWindowWidget()
+        self.map_screen = WindowWidget(MapWidget())
         self.stack.addWidget(self.map_screen)
         self.map_screen.go_back.connect(self.show_start_screen)
 
-        self.globe_screen = Globe3DWidget()
+        self.globe_screen = WindowWidget(Globe3DWidget())
         self.stack.addWidget(self.globe_screen)
 
-        self.use_3d = True
+        self.use_3d = False
 
     def create_start_screen(self):
         widget = QtWidgets.QWidget()
@@ -88,11 +91,11 @@ class MainApp(QtWidgets.QMainWindow):
 
         plane = Plane(flight_data['from_point'], flight_data['to_point'])
         if self.use_3d:
-            self.globe_screen.add_point(
+            self.globe_screen.simulation_view.add_point(
                 flight_data['from_point'].latitude, 
                 flight_data['from_point'].longitude
             )
-            self.globe_screen.add_point(
+            self.globe_screen.simulation_view.add_point(
                 flight_data['to_point'].latitude, 
                 flight_data['to_point'].longitude
             )
@@ -101,11 +104,11 @@ class MainApp(QtWidgets.QMainWindow):
             self.stack.setCurrentWidget(self.globe_screen)
             
         else:
-            self.map_screen.add_point(
+            self.map_screen.simulation_view.add_point(
                 flight_data['from_point'].latitude, 
                 flight_data['from_point'].longitude
             )
-            self.map_screen.add_point(
+            self.map_screen.simulation_view.add_point(
                 flight_data['to_point'].latitude, 
                 flight_data['to_point'].longitude
             )

@@ -1,13 +1,11 @@
 import numpy as np
-from PySide6 import QtWidgets, QtGui, QtCore
+from PySide6 import QtWidgets, QtGui
 import pyqtgraph as pg
 import geopandas as gpd
 from shapely.geometry import Polygon, MultiPolygon
 from Plane import Plane
 from Projectile import Projectile
-from SimulationClock import SimulationClock
 from MapViewBox import MapViewBox
-from Point import Point
 
 class MapWidget(QtWidgets.QWidget):
     def __init__(self):

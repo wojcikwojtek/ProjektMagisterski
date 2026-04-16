@@ -51,8 +51,9 @@ class MainApp(QtWidgets.QMainWindow):
 
         self.globe_screen = WindowWidget(Globe3DWidget())
         self.stack.addWidget(self.globe_screen)
+        self.globe_screen.go_back.connect(self.show_start_screen)
 
-        self.use_3d = False
+        self.use_3d = True
 
     def create_start_screen(self):
         widget = QtWidgets.QWidget()
@@ -84,7 +85,10 @@ class MainApp(QtWidgets.QMainWindow):
     
     def show_start_screen(self):
         self.stack.setCurrentIndex(0)
-        self.map_screen.clear()
+        if self.use_3d:
+            self.globe_screen.clear()
+        else:
+            self.map_screen.clear()
     
     def visualize_flight(self, item):
         flight_data = item.data(QtCore.Qt.UserRole)

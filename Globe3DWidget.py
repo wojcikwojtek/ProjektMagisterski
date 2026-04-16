@@ -5,7 +5,6 @@ from PySide6.QtGui import QVector3D, QColor
 from PySide6.Qt3DRender import Qt3DRender
 import numpy as np
 from Plane import Plane
-from SimulationClock import SimulationClock
 
 class Globe3DWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -54,6 +53,12 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.globe_entity.addComponent(mesh)
         self.globe_entity.addComponent(material)
 
+        self.picker = Qt3DRender.QObjectPicker(self.globe_entity)
+        self.picker.setHoverEnabled(True)
+        self.picker.clicked.connect(self.on_globe_clicked)
+
+        self.globe_entity.addComponent(self.picker)
+
     def create_light(self):
         light_entity = Qt3DCore.QEntity(self.root)
 
@@ -76,6 +81,18 @@ class Globe3DWidget(QtWidgets.QWidget):
         z = radius * np.cos(lat) * np.sin(lon)
 
         return QVector3D(x, y, z)
+    
+    def xyz_to_latlon(self, pos):
+        x = pos.x()
+        y = pos.y()
+        z = pos.z()
+
+        r = (x**2 + y**2 + z**2) ** 0.5
+
+        lat = np.degrees(np.asin(y / r))
+        lon = np.degrees(np.atan2(z, x))
+
+        return lat, lon
     
     def add_point(self, lat, lon):
         entity = Qt3DCore.QEntity(self.root)
@@ -114,6 +131,8 @@ class Globe3DWidget(QtWidgets.QWidget):
         entity.addComponent(mesh)
         entity.addComponent(material)
         entity.addComponent(self.plane_transform)
+
+        self.plane_item = entity
         
         # self.timer.start(16)
         # self.clock = SimulationClock(self.starting_speed)
@@ -122,16 +141,20 @@ class Globe3DWidget(QtWidgets.QWidget):
     def update_plane_pos(self, lat, lon):
         pos = self.latlon_to_xyz(lat, lon, self.radius)
         self.plane_transform.setTranslation(pos)
-
-    # def animate_plane(self):
-    #     if not (hasattr(self, "plane") or hasattr(self, "clock")):
-    #         return
-    #     if self.clock.paused:
-    #         return
         
-    #     t = self.clock.now()
+    def on_globe_clicked(self, event):
+        world_pos = event.worldIntersection()
 
-    #     if t > self.plane.T:
-    #         return
+        lat, lon = self.xyz_to_latlon(world_pos)
+        print(f"Lat: {lat:.4f}, Lon: {lon:.4f}")
 
-    #     self.update_plane_pos(t)
+    def clear(self):
+        for p in self.points:
+            p.setParent(None)
+            p.deleteLater()
+        self.points.clear()
+
+        self.plane_item.setParent(None)
+        self.plane_item.deleteLater()
+        delattr(self, 'plane_item')
+        delattr(self, 'plane_transform')

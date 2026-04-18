@@ -38,6 +38,8 @@ class WindowWidget(QtWidgets.QWidget):
         layout.addWidget(self.simulation_view)
         if type(self.simulation_view) == MapWidget:
             self.simulation_view.view.clicked.connect(self.clicked_on_map)
+        elif type(self.simulation_view) == Globe3DWidget:
+            self.simulation_view.picker.clicked.connect(self.clicked_on_globe)
 
         controls = QtWidgets.QHBoxLayout()
         layout.addLayout(controls)
@@ -143,6 +145,21 @@ class WindowWidget(QtWidgets.QWidget):
         if hasattr(self, 'projectile'):
             delattr(self, 'projectile')
             self.simulation_view.view.removeItem(self.projectile_item)
+
+        t = self.clock.now()
+        velocity = 1 * self.plane.calculate_mean_velocity()
+        self.add_projectile(Projectile(point, self.plane, t, velocity))
+
+    def clicked_on_globe(self, event):
+        world_pos = event.worldIntersection()
+        lat, lon = self.simulation_view.xyz_to_latlon(world_pos)
+        point = Point(lat, lon, None)
+        if hasattr(self, 'projectile'):
+            delattr(self, 'projectile')
+            self.simulation_view.projectile_item.setParent(None)
+            self.simulation_view.projectile_item.deleteLater()
+            delattr(self.simulation_view, 'projectile_item')
+            delattr(self.simulation_view, 'projectile_transform')
 
         t = self.clock.now()
         velocity = 1 * self.plane.calculate_mean_velocity()

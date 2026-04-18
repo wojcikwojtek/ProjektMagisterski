@@ -1,10 +1,11 @@
 from PySide6 import QtWidgets, QtCore 
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DCore import Qt3DCore
-from PySide6.QtGui import QVector3D, QColor
+from PySide6.QtGui import QVector3D, QColor, QQuaternion
 from PySide6.Qt3DRender import Qt3DRender
 import numpy as np
 from Plane import Plane
+from Projectile import Projectile
 
 class Globe3DWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -46,18 +47,48 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.radius = 5
         mesh.setRadius(self.radius)
 
-        material = Qt3DExtras.QPhongMaterial(self.root)
-        material.setDiffuse(QColor(200, 200, 200))
-        material.setAmbient(QColor(30, 30, 30))
+        texture = Qt3DRender.QTextureLoader(self.root)
+        texture.setSource(QtCore.QUrl.fromLocalFile("Land_ocean_ice_2048.jpg"))
+
+        # material = Qt3DExtras.QPhongMaterial(self.root)
+        # material.setDiffuse(QColor(200, 200, 200))
+        # material.setAmbient(QColor(30, 30, 30))
+        material = Qt3DExtras.QDiffuseMapMaterial(self.root)
+        material.setDiffuse(texture)
 
         self.globe_entity.addComponent(mesh)
         self.globe_entity.addComponent(material)
 
         self.picker = Qt3DRender.QObjectPicker(self.globe_entity)
         self.picker.setHoverEnabled(True)
-        self.picker.clicked.connect(self.on_globe_clicked)
+        # self.picker.clicked.connect(self.on_globe_clicked)
 
         self.globe_entity.addComponent(self.picker)
+
+        self.globe_transform = Qt3DCore.QTransform()
+        # self.globe_transform.setRotationX(45)
+        self.globe_entity.addComponent(self.globe_transform)
+        self.globe_transform.setRotationY(180)
+        self.rotate_globe()
+
+    def rotate_globe(self):
+        v_front = self.latlon_to_xyz(0, 0, self.radius).normalized() #punkt ktory ma patrzec na kamere, czyli punkt (0, 0) na globie
+        v_north = self.latlon_to_xyz(90, 0, self.radius).normalized() #biegun północny
+
+        target_front = QVector3D(0, 0, 1) #w strone kamery
+        target_up = QVector3D(0, 1, 0) #gora ekranu
+
+        #Rotacja frontu na target_front
+        q1 = QQuaternion.rotationTo(v_front, target_front)
+
+        #Wektor bieguna północnego po rotacji
+        rotated_north = q1.rotatedVector(v_north)
+
+        #Rotacja bieguna pólnocnego na target_up
+        q2 = QQuaternion.rotationTo(rotated_north, target_up)
+
+        final_rotation = q2 * q1
+        self.globe_transform.setRotation(final_rotation)
 
     def create_light(self):
         light_entity = Qt3DCore.QEntity(self.root)
@@ -73,7 +104,8 @@ class Globe3DWidget(QtWidgets.QWidget):
 
     def latlon_to_xyz(self, lat, lon, radius):
         lat = np.radians(lat)
-        lon = np.radians(lon)
+        #przesuniecie o 180 bo tekstura jest zwalona
+        lon = np.radians(-lon - 180) #odwracamy bo idk taki dziwny układ wspolrzednych jest w 3D
 
         # y i z zamienione ze soba bo taki przyjmujemy uklad wspolrzednych gdzie z to wysokosc
         x = radius * np.cos(lat) * np.cos(lon)
@@ -90,7 +122,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         r = (x**2 + y**2 + z**2) ** 0.5
 
         lat = np.degrees(np.asin(y / r))
-        lon = np.degrees(np.atan2(z, x))
+        lon = -np.degrees(np.atan2(z, x)) #tu tez musimy odwrocic
 
         return lat, lon
     
@@ -106,6 +138,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         transform = Qt3DCore.QTransform(self.root)
 
         pos = self.latlon_to_xyz(lat, lon, self.radius)
+        pos = self.globe_transform.rotation().rotatedVector(pos)
         transform.setTranslation(pos)
 
         entity.addComponent(mesh)
@@ -126,6 +159,7 @@ class Globe3DWidget(QtWidgets.QWidget):
 
         lat, lon = plane.get_plane_position(0)
         pos = self.latlon_to_xyz(lat, lon, self.radius)
+        pos = self.globe_transform.rotation().rotatedVector(pos)
         self.plane_transform.setTranslation(pos)
 
         entity.addComponent(mesh)
@@ -138,15 +172,41 @@ class Globe3DWidget(QtWidgets.QWidget):
         # self.clock = SimulationClock(self.starting_speed)
         # self.plane = plane
 
+    def add_projectile(self, projectile: Projectile):
+        entity = Qt3DCore.QEntity(self.root)
+
+        mesh = Qt3DExtras.QSphereMesh(self.root)
+        mesh.setRadius(0.2)
+
+        material = Qt3DExtras.QPhongMaterial(self.root)
+        material.setDiffuse(QColor(255, 255, 0))
+
+        self.projectile_transform = Qt3DCore.QTransform(self.root)
+
+        lat, lon = projectile.start_point.latitude, projectile.start_point.longitude
+        pos = self.latlon_to_xyz(lat, lon, self.radius)
+        self.projectile_transform.setTranslation(pos)
+
+        entity.addComponent(mesh)
+        entity.addComponent(material)
+        entity.addComponent(self.projectile_transform)
+
+        self.projectile_item = entity
+
     def update_plane_pos(self, lat, lon):
         pos = self.latlon_to_xyz(lat, lon, self.radius)
+        pos = self.globe_transform.rotation().rotatedVector(pos)
         self.plane_transform.setTranslation(pos)
+
+    def update_projectile_pos(self, lat, lon):
+        pos = self.latlon_to_xyz(lat, lon, self.radius)
+        self.projectile_transform.setTranslation(pos)
         
     def on_globe_clicked(self, event):
         world_pos = event.worldIntersection()
 
         lat, lon = self.xyz_to_latlon(world_pos)
-        print(f"Lat: {lat:.4f}, Lon: {lon:.4f}")
+        self.add_point(lat, lon)
 
     def clear(self):
         for p in self.points:
@@ -158,3 +218,9 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.plane_item.deleteLater()
         delattr(self, 'plane_item')
         delattr(self, 'plane_transform')
+
+        if hasattr(self, 'projectile_item'):
+            self.projectile_item.setParent(None)
+            self.projectile_item.deleteLater()
+            delattr(self, 'projectile_item')
+            delattr(self, 'projectile_transform')

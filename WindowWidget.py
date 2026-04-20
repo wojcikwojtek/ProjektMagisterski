@@ -152,7 +152,11 @@ class WindowWidget(QtWidgets.QWidget):
 
     def clicked_on_globe(self, event):
         world_pos = event.worldIntersection()
-        lat, lon = self.simulation_view.xyz_to_latlon(world_pos)
+        rotation = self.simulation_view.globe_transform.rotation()
+        inv_rotation = rotation.conjugated()
+        local_pos = inv_rotation.rotatedVector(world_pos)
+
+        lat, lon = self.simulation_view.xyz_to_latlon(local_pos)
         point = Point(lat, lon, None)
         if hasattr(self, 'projectile'):
             delattr(self, 'projectile')

@@ -21,6 +21,8 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.root = Qt3DCore.QEntity()
         self.view.setRootEntity(self.root)
 
+        self.radius = 10
+
         self.create_camera()
         self.create_globe()
         self.create_light()
@@ -34,7 +36,7 @@ class Globe3DWidget(QtWidgets.QWidget):
     def create_camera(self):
         camera = self.view.camera()
         camera.lens().setPerspectiveProjection(45.0, 16/9, 0.1, 1000)
-        camera.setPosition(QVector3D(0, 0, 20))
+        camera.setPosition(QVector3D(0, 0, self.radius * 4))
         camera.setViewCenter(QVector3D(0, 0, 0))
 
         self.cam_controller = Qt3DExtras.QOrbitCameraController(self.root)
@@ -44,7 +46,6 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.globe_entity = Qt3DCore.QEntity(self.root)
 
         mesh = Qt3DExtras.QSphereMesh(self.root)
-        self.radius = 5
         mesh.setRadius(self.radius)
 
         texture = Qt3DRender.QTextureLoader(self.root)
@@ -122,7 +123,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         r = (x**2 + y**2 + z**2) ** 0.5
 
         lat = np.degrees(np.asin(y / r))
-        lon = -np.degrees(np.atan2(z, x)) #tu tez musimy odwrocic
+        lon = -np.degrees(np.atan2(z, x)) + 180 #tu tez musimy odwrocic
 
         return lat, lon
     
@@ -130,7 +131,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         entity = Qt3DCore.QEntity(self.root)
 
         mesh = Qt3DExtras.QSphereMesh(self.root)
-        mesh.setRadius(0.2)
+        mesh.setRadius(0.03)
 
         material = Qt3DExtras.QPhongMaterial(self.root)
         material.setDiffuse(QColor(255, 0, 0))
@@ -150,7 +151,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         entity = Qt3DCore.QEntity(self.root)
 
         mesh = Qt3DExtras.QSphereMesh(self.root)
-        mesh.setRadius(0.21)
+        mesh.setRadius(0.03)
 
         material = Qt3DExtras.QPhongMaterial(self.root)
         material.setDiffuse(QColor(0, 0, 255))
@@ -176,7 +177,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         entity = Qt3DCore.QEntity(self.root)
 
         mesh = Qt3DExtras.QSphereMesh(self.root)
-        mesh.setRadius(0.2)
+        mesh.setRadius(0.03)
 
         material = Qt3DExtras.QPhongMaterial(self.root)
         material.setDiffuse(QColor(255, 255, 0))
@@ -185,6 +186,7 @@ class Globe3DWidget(QtWidgets.QWidget):
 
         lat, lon = projectile.start_point.latitude, projectile.start_point.longitude
         pos = self.latlon_to_xyz(lat, lon, self.radius)
+        pos = self.globe_transform.rotation().rotatedVector(pos)
         self.projectile_transform.setTranslation(pos)
 
         entity.addComponent(mesh)
@@ -198,15 +200,24 @@ class Globe3DWidget(QtWidgets.QWidget):
         pos = self.globe_transform.rotation().rotatedVector(pos)
         self.plane_transform.setTranslation(pos)
 
+        self.update_camera_follow()
+
     def update_projectile_pos(self, lat, lon):
         pos = self.latlon_to_xyz(lat, lon, self.radius)
+        pos = self.globe_transform.rotation().rotatedVector(pos)
         self.projectile_transform.setTranslation(pos)
-        
-    def on_globe_clicked(self, event):
-        world_pos = event.worldIntersection()
 
-        lat, lon = self.xyz_to_latlon(world_pos)
-        self.add_point(lat, lon)
+    def update_camera_follow(self):
+        if not hasattr(self, "plane_transform"):
+            return
+        
+        plane_pos = self.plane_transform.translation()
+
+        offset = QVector3D(0, 2, 5)
+
+        camera = self.view.camera()
+        camera.setPosition(plane_pos + offset)
+        camera.setViewCenter(plane_pos)
 
     def clear(self):
         for p in self.points:

@@ -105,18 +105,7 @@ class MainApp(QtWidgets.QMainWindow):
             )
             self.globe_screen.add_plane(plane)
 
-            self.stack.setCurrentWidget(self.globe_screen)
-
-            self.globe_screen.simulation_view.add_point(
-                0,
-                0
-            )
-
-            self.globe_screen.simulation_view.add_point(
-                90,
-                0
-            )
-            
+            self.stack.setCurrentWidget(self.globe_screen)            
         else:
             self.map_screen.simulation_view.add_point(
                 flight_data['from_point'].latitude, 

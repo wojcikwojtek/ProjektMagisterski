@@ -6,6 +6,7 @@ from PySide6.Qt3DRender import Qt3DRender
 import numpy as np
 from Plane import Plane
 from Projectile import Projectile
+from PlaneCameraController import PlaneCameraController
 
 class Globe3DWidget(QtWidgets.QWidget):
     def __init__(self):
@@ -36,11 +37,12 @@ class Globe3DWidget(QtWidgets.QWidget):
     def create_camera(self):
         camera = self.view.camera()
         camera.lens().setPerspectiveProjection(45.0, 16/9, 0.1, 1000)
-        camera.setPosition(QVector3D(0, 0, self.radius * 4))
-        camera.setViewCenter(QVector3D(0, 0, 0))
+        # camera.setPosition(QVector3D(0, 0, self.radius * 4))
+        # camera.setViewCenter(QVector3D(0, 0, 0))
 
-        self.cam_controller = Qt3DExtras.QOrbitCameraController(self.root)
-        self.cam_controller.setCamera(camera) 
+        # self.cam_controller = Qt3DExtras.QOrbitCameraController(self.root)
+        # self.cam_controller.setCamera(camera) 
+        self.custom_cam_controller = PlaneCameraController(camera, self.view, self)
 
     def create_globe(self):
         self.globe_entity = Qt3DCore.QEntity(self.root)
@@ -212,12 +214,13 @@ class Globe3DWidget(QtWidgets.QWidget):
             return
         
         plane_pos = self.plane_transform.translation()
+        self.custom_cam_controller.update_camera(plane_pos)
 
-        offset = QVector3D(0, 2, 5)
+        # normal = plane_pos.normalized()
 
-        camera = self.view.camera()
-        camera.setPosition(plane_pos + offset)
-        camera.setViewCenter(plane_pos)
+        # camera = self.view.camera()
+        # camera.setPosition(plane_pos + (normal * 5))
+        # camera.setViewCenter(plane_pos)
 
     def clear(self):
         for p in self.points:

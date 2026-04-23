@@ -36,7 +36,7 @@ class Globe3DWidget(QtWidgets.QWidget):
 
     def create_camera(self):
         camera = self.view.camera()
-        camera.lens().setPerspectiveProjection(45.0, 16/9, 0.1, 1000)
+        camera.lens().setPerspectiveProjection(45.0, 16/9, 0.5, 100.0)
         # camera.setPosition(QVector3D(0, 0, self.radius * 4))
         # camera.setViewCenter(QVector3D(0, 0, 0))
 
@@ -69,7 +69,6 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.globe_entity.addComponent(self.picker)
 
         self.globe_transform = Qt3DCore.QTransform()
-        # self.globe_transform.setRotationX(45)
         self.globe_entity.addComponent(self.globe_transform)
         self.globe_transform.setRotationY(180)
         self.rotate_globe()
@@ -130,7 +129,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         return lat, lon
     
     def add_point(self, lat, lon):
-        entity = Qt3DCore.QEntity(self.root)
+        entity = Qt3DCore.QEntity(self.globe_entity)
 
         mesh = Qt3DExtras.QSphereMesh(self.root)
         mesh.setRadius(0.03)
@@ -141,7 +140,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         transform = Qt3DCore.QTransform(self.root)
 
         pos = self.latlon_to_xyz(lat, lon, self.radius)
-        pos = self.globe_transform.rotation().rotatedVector(pos)
+        # pos = self.globe_transform.rotation().rotatedVector(pos)
         transform.setTranslation(pos)
 
         entity.addComponent(mesh)
@@ -150,7 +149,7 @@ class Globe3DWidget(QtWidgets.QWidget):
         self.points.append(entity)
 
     def add_plane(self, plane: Plane):
-        entity = Qt3DCore.QEntity(self.root)
+        entity = Qt3DCore.QEntity(self.globe_entity)
 
         mesh = Qt3DExtras.QSphereMesh(self.root)
         mesh.setRadius(0.03)
@@ -158,11 +157,11 @@ class Globe3DWidget(QtWidgets.QWidget):
         material = Qt3DExtras.QPhongMaterial(self.root)
         material.setDiffuse(QColor(0, 0, 255))
 
-        self.plane_transform = Qt3DCore.QTransform(self.root)
+        self.plane_transform = Qt3DCore.QTransform()
 
         lat, lon = plane.get_plane_position(0)
-        pos = self.latlon_to_xyz(lat, lon, self.radius)
-        pos = self.globe_transform.rotation().rotatedVector(pos)
+        pos = self.latlon_to_xyz(lat, lon, self.radius + 0.05)
+        # pos = self.globe_transform.rotation().rotatedVector(pos)
         self.plane_transform.setTranslation(pos)
 
         entity.addComponent(mesh)
@@ -176,44 +175,51 @@ class Globe3DWidget(QtWidgets.QWidget):
         # self.plane = plane
 
     def add_projectile(self, projectile: Projectile):
-        entity = Qt3DCore.QEntity(self.root)
+        entity = Qt3DCore.QEntity()
 
         mesh = Qt3DExtras.QSphereMesh(self.root)
         mesh.setRadius(0.03)
-
+        
         material = Qt3DExtras.QPhongMaterial(self.root)
         material.setDiffuse(QColor(255, 255, 0))
-
-        self.projectile_transform = Qt3DCore.QTransform(self.root)
+        self.projectile_transform = Qt3DCore.QTransform(entity)
 
         lat, lon = projectile.start_point.latitude, projectile.start_point.longitude
-        pos = self.latlon_to_xyz(lat, lon, self.radius)
-        pos = self.globe_transform.rotation().rotatedVector(pos)
+        pos = self.latlon_to_xyz(lat, lon, self.radius + 0.05)
+        # pos = self.globe_transform.rotation().rotatedVector(pos)
         self.projectile_transform.setTranslation(pos)
 
         entity.addComponent(mesh)
         entity.addComponent(material)
         entity.addComponent(self.projectile_transform)
 
+        entity.setParent(self.globe_entity)
+
         self.projectile_item = entity
 
     def update_plane_pos(self, lat, lon):
-        pos = self.latlon_to_xyz(lat, lon, self.radius)
-        pos = self.globe_transform.rotation().rotatedVector(pos)
+        pos = self.latlon_to_xyz(lat, lon, self.radius + 0.05)
+        # pos = self.globe_transform.rotation().rotatedVector(pos)
         self.plane_transform.setTranslation(pos)
 
         self.update_camera_follow()
 
     def update_projectile_pos(self, lat, lon):
-        pos = self.latlon_to_xyz(lat, lon, self.radius)
-        pos = self.globe_transform.rotation().rotatedVector(pos)
+        pos = self.latlon_to_xyz(lat, lon, self.radius + 0.05)
+        # pos = self.globe_transform.rotation().rotatedVector(pos)
         self.projectile_transform.setTranslation(pos)
 
     def update_camera_follow(self):
         if not hasattr(self, "plane_transform"):
             return
         
-        plane_pos = self.plane_transform.translation()
+        # plane_pos = self.plane_transform.translation()
+        # self.custom_cam_controller.update_camera(plane_pos)
+
+        local = self.plane_transform.translation()
+        rot = self.globe_transform.rotation()
+        plane_pos = rot.rotatedVector(local)
+
         self.custom_cam_controller.update_camera(plane_pos)
 
         # normal = plane_pos.normalized()

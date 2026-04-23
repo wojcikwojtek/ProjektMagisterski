@@ -5,6 +5,7 @@ from SimulationClock import SimulationClock
 from Point import Point
 from MapWidget import MapWidget
 from Globe3DWidget import Globe3DWidget
+from PySide6.Qt3DRender import Qt3DRender
 
 class WindowWidget(QtWidgets.QWidget):
     go_back = QtCore.Signal()
@@ -151,23 +152,28 @@ class WindowWidget(QtWidgets.QWidget):
         self.add_projectile(Projectile(point, self.plane, t, velocity))
 
     def clicked_on_globe(self, event):
-        world_pos = event.worldIntersection()
-        rotation = self.simulation_view.globe_transform.rotation()
-        inv_rotation = rotation.conjugated()
-        local_pos = inv_rotation.rotatedVector(world_pos)
+        if event.button() == Qt3DRender.QPickEvent.Buttons.LeftButton:
+            world_pos = event.worldIntersection()
+            rotation = self.simulation_view.globe_transform.rotation()
+            inv_rotation = rotation.conjugated()
+            local_pos = inv_rotation.rotatedVector(world_pos)
 
-        lat, lon = self.simulation_view.xyz_to_latlon(local_pos)
-        point = Point(lat, lon, None)
-        if hasattr(self, 'projectile'):
-            delattr(self, 'projectile')
-            self.simulation_view.projectile_item.setParent(None)
-            self.simulation_view.projectile_item.deleteLater()
-            delattr(self.simulation_view, 'projectile_item')
-            delattr(self.simulation_view, 'projectile_transform')
+            lat, lon = self.simulation_view.xyz_to_latlon(local_pos)
+            point = Point(lat, lon, None)
+            if hasattr(self, 'projectile'):
+                # delattr(self, 'projectile')
+                # self.simulation_view.projectile_item.setParent(None)
+                # self.simulation_view.projectile_item.deleteLater()
+                # delattr(self.simulation_view, 'projectile_item')
+                # delattr(self.simulation_view, 'projectile_transform')
+                pass
 
-        t = self.clock.now()
-        velocity = 1 * self.plane.calculate_mean_velocity()
-        self.add_projectile(Projectile(point, self.plane, t, velocity))
+            t = self.clock.now()
+            velocity = 1 * self.plane.calculate_mean_velocity()
+            # self.add_projectile(Projectile(point, self.plane, t, velocity))
+            self.projectile.start_point = point
+            self.projectile.calculate_intercept_angle(t, velocity)
+            self.simulation_view.update_projectile_pos(lat, lon)
 
     def on_spinbox_value_changed(self, value):
         current_time = self.clock.now()

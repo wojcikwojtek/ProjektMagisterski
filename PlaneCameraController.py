@@ -22,13 +22,13 @@ class PlaneCameraController(QObject):
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.MouseButtonPress:
-            if event.button() == Qt.LeftButton:
+            if event.button() == Qt.RightButton:
                 self.is_dragging = True 
                 self.last_mouse_pos = event.position()
                 return True 
             
         elif event.type() == QEvent.MouseButtonRelease:
-            if event.button() == Qt.LeftButton:
+            if event.button() == Qt.RightButton:
                 self.is_dragging = False
                 return True 
             

@@ -6,6 +6,7 @@ from datetime import datetime
 from Plane import Plane
 from Globe3DWidget import Globe3DWidget
 from MapWidget import MapWidget
+from Projectile import Projectile
 
 class MainApp(QtWidgets.QMainWindow):
     flights_data = [
@@ -104,6 +105,7 @@ class MainApp(QtWidgets.QMainWindow):
                 flight_data['to_point'].longitude
             )
             self.globe_screen.add_plane(plane)
+            self.globe_screen.add_projectile(Projectile(Point(52.3666652, 13.501997992, None), plane, 0, plane.calculate_mean_velocity()))
 
             self.stack.setCurrentWidget(self.globe_screen)            
         else:
@@ -116,5 +118,4 @@ class MainApp(QtWidgets.QMainWindow):
                 flight_data['to_point'].longitude
             )
             self.map_screen.add_plane(plane)
-
             self.stack.setCurrentWidget(self.map_screen)

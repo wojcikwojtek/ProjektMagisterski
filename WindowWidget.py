@@ -9,6 +9,7 @@ from PySide6.Qt3DRender import Qt3DRender
 
 class WindowWidget(QtWidgets.QWidget):
     go_back = QtCore.Signal()
+    switch_view = QtCore.Signal(object, object, object)
 
     #dodać simulation_view: MapWidget | GlobeWidget
     def __init__(self, simulation_view: MapWidget | Globe3DWidget):
@@ -34,6 +35,17 @@ class WindowWidget(QtWidgets.QWidget):
         self.spinbox.valueChanged.connect(self.on_spinbox_value_changed)
 
         top_bar.addStretch()
+
+        self.switch_view_button = QtWidgets.QPushButton("Switch View")
+        top_bar.addWidget(self.switch_view_button)
+
+        self.switch_view_button.clicked.connect(
+            lambda: self.switch_view.emit(
+                self.clock, 
+                self.plane, 
+                self.projectile if hasattr(self, "projectile") else None
+            )
+        )
 
         self.simulation_view = simulation_view
         layout.addWidget(self.simulation_view)
@@ -66,11 +78,14 @@ class WindowWidget(QtWidgets.QWidget):
         self.timer = QtCore.QTimer()
         self.timer.timeout.connect(self.animate_plane)
 
-    def add_plane(self, plane: Plane):
+    def add_plane(self, plane: Plane, clock: SimulationClock = None):
         self.simulation_view.add_plane(plane)
 
         self.timer.start(16)
-        self.clock = SimulationClock(self.starting_speed)
+        if clock is not None:
+            self.clock = clock
+        else:
+            self.clock = SimulationClock(self.starting_speed)
         self.plane = plane
 
     def add_projectile(self, projectile: Projectile):
@@ -79,6 +94,9 @@ class WindowWidget(QtWidgets.QWidget):
         self.projectile = projectile
 
     def animate_plane(self):
+        if type(self.simulation_view) == Globe3DWidget:
+            self.simulation_view.update_camera_follow()
+            
         if not (hasattr(self, "plane") or hasattr(self, "clock")):
             return
         if self.clock.paused:
@@ -86,7 +104,7 @@ class WindowWidget(QtWidgets.QWidget):
         
         t = self.clock.now()
 
-        has_projectile = hasattr(self, "projectile")
+        has_projectile = hasattr(self, "projectile") and self.projectile.disabled == False
         if has_projectile:
             if t > self.projectile.intercept_time:
                 return
@@ -125,7 +143,7 @@ class WindowWidget(QtWidgets.QWidget):
 
     def slider_moved(self, value):
         t = (value * self.plane.T) / 10000
-        if hasattr(self, "projectile"):
+        if hasattr(self, "projectile") and self.projectile.disabled == False:
             if t >= self.projectile.t1: 
                 lat, lon = self.projectile.calculate_current_cords(t)
                 self.simulation_view.update_projectile_pos(lat, lon)
@@ -171,6 +189,7 @@ class WindowWidget(QtWidgets.QWidget):
             t = self.clock.now()
             velocity = 1 * self.plane.calculate_mean_velocity()
             # self.add_projectile(Projectile(point, self.plane, t, velocity))
+            self.projectile.disabled = False
             self.projectile.start_point = point
             self.projectile.calculate_intercept_angle(t, velocity)
             self.simulation_view.update_projectile_pos(lat, lon)

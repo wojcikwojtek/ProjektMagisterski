@@ -49,10 +49,12 @@ class MainApp(QtWidgets.QMainWindow):
         self.map_screen = WindowWidget(MapWidget())
         self.stack.addWidget(self.map_screen)
         self.map_screen.go_back.connect(self.show_start_screen)
+        self.map_screen.switch_view.connect(self.switch_view)
 
         self.globe_screen = WindowWidget(Globe3DWidget())
         self.stack.addWidget(self.globe_screen)
         self.globe_screen.go_back.connect(self.show_start_screen)
+        self.globe_screen.switch_view.connect(self.switch_view)
 
         self.use_3d = True
 
@@ -105,7 +107,7 @@ class MainApp(QtWidgets.QMainWindow):
                 flight_data['to_point'].longitude
             )
             self.globe_screen.add_plane(plane)
-            self.globe_screen.add_projectile(Projectile(Point(52.3666652, 13.501997992, None), plane, 0, plane.calculate_mean_velocity()))
+            self.globe_screen.add_projectile(Projectile(Point(0.0, 0.0, None), plane, 0, 0, disabled=True))
 
             self.stack.setCurrentWidget(self.globe_screen)            
         else:
@@ -119,3 +121,49 @@ class MainApp(QtWidgets.QMainWindow):
             )
             self.map_screen.add_plane(plane)
             self.stack.setCurrentWidget(self.map_screen)
+
+    def switch_view(self, clock, plane, projectile):
+        if self.use_3d:
+            if hasattr(self.map_screen, "plane"):
+                self.map_screen.clock = clock
+            else:
+                self.map_screen.simulation_view.add_point(
+                    plane.start_point.latitude,
+                    plane.start_point.longitude
+                )
+                self.map_screen.simulation_view.add_point(
+                    plane.end_point.latitude,
+                    plane.end_point.longitude
+                )
+                self.map_screen.add_plane(plane, clock)
+            if projectile is not None and projectile.disabled == False:
+                if not hasattr(self.map_screen, "projectile"):
+                    self.map_screen.add_projectile(projectile)
+            if self.map_screen.clock.paused:
+                self.map_screen.clock.resume()
+                self.map_screen.animate_plane()
+                self.map_screen.clock.pause()
+            self.stack.setCurrentWidget(self.map_screen)
+            self.use_3d = False 
+        else:
+            if hasattr(self.globe_screen, "plane"):
+                self.globe_screen.clock = clock
+            else:
+                self.globe_screen.simulation_view.add_point(
+                    plane.start_point.latitude,
+                    plane.start_point.longitude
+                )
+                self.globe_screen.simulation_view.add_point(
+                    plane.end_point.latitude,
+                    plane.end_point.longitude
+                )
+                self.globe_screen.add_plane(plane, clock)
+                self.globe_screen.add_projectile(Projectile(Point(0.0, 0.0, None), plane, 0, 0, disabled=True))
+            if projectile is not None and projectile.disabled == False:
+                self.globe_screen.projectile = projectile
+            if self.globe_screen.clock.paused:
+                self.globe_screen.clock.resume()
+                self.globe_screen.animate_plane()
+                self.globe_screen.clock.pause()
+            self.stack.setCurrentWidget(self.globe_screen)
+            self.use_3d = True

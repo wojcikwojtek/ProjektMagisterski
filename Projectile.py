@@ -6,10 +6,12 @@ from scipy import optimize
 class Projectile():
     R = 6371e3
 
-    def __init__(self, start_point: Point, intercepted_plane: Plane, current_time: float, velocity: float):
+    def __init__(self, start_point: Point, intercepted_plane: Plane, current_time: float, velocity: float, disabled = False):
         self.start_point = start_point
         self.intercepted_plane = intercepted_plane
-        self.calculate_intercept_angle(current_time, velocity)
+        self.disabled = disabled
+        if not disabled:
+            self.calculate_intercept_angle(current_time, velocity)
 
     def latlon_to_vector(self, lat, lon):
         lat_rad = np.radians(lat)

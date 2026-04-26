@@ -184,9 +184,12 @@ class Globe3DWidget(QtWidgets.QWidget):
         material.setDiffuse(QColor(255, 255, 0))
         self.projectile_transform = Qt3DCore.QTransform(entity)
 
-        lat, lon = projectile.start_point.latitude, projectile.start_point.longitude
-        pos = self.latlon_to_xyz(lat, lon, self.radius + 0.05)
-        # pos = self.globe_transform.rotation().rotatedVector(pos)
+        if projectile.disabled:
+            pos = QVector3D(0, 0, 0) 
+        else:
+            lat, lon = projectile.start_point.latitude, projectile.start_point.longitude
+            pos = self.latlon_to_xyz(lat, lon, self.radius + 0.05)
+            # pos = self.globe_transform.rotation().rotatedVector(pos)
         self.projectile_transform.setTranslation(pos)
 
         entity.addComponent(mesh)
@@ -201,8 +204,6 @@ class Globe3DWidget(QtWidgets.QWidget):
         pos = self.latlon_to_xyz(lat, lon, self.radius + 0.05)
         # pos = self.globe_transform.rotation().rotatedVector(pos)
         self.plane_transform.setTranslation(pos)
-
-        self.update_camera_follow()
 
     def update_projectile_pos(self, lat, lon):
         pos = self.latlon_to_xyz(lat, lon, self.radius + 0.05)

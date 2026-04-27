@@ -140,9 +140,10 @@ class MainApp(QtWidgets.QMainWindow):
                 if not hasattr(self.map_screen, "projectile"):
                     self.map_screen.add_projectile(projectile)
             if self.map_screen.clock.paused:
-                self.map_screen.clock.resume()
+                self.map_screen.toggle_pause()
                 self.map_screen.animate_plane()
-                self.map_screen.clock.pause()
+                self.map_screen.toggle_pause()
+            self.map_screen.spinbox.setValue(self.globe_screen.spinbox.value())
             self.stack.setCurrentWidget(self.map_screen)
             self.use_3d = False 
         else:
@@ -162,8 +163,9 @@ class MainApp(QtWidgets.QMainWindow):
             if projectile is not None and projectile.disabled == False:
                 self.globe_screen.projectile = projectile
             if self.globe_screen.clock.paused:
-                self.globe_screen.clock.resume()
+                self.globe_screen.toggle_pause()
                 self.globe_screen.animate_plane()
-                self.globe_screen.clock.pause()
+                self.globe_screen.toggle_pause()
+            self.globe_screen.spinbox.setValue(self.map_screen.spinbox.value())
             self.stack.setCurrentWidget(self.globe_screen)
             self.use_3d = True

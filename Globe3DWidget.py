@@ -1,14 +1,17 @@
 from PySide6 import QtWidgets, QtCore 
 from PySide6.Qt3DExtras import Qt3DExtras
 from PySide6.Qt3DCore import Qt3DCore
-from PySide6.QtGui import QVector3D, QColor, QQuaternion
+from PySide6.QtGui import QVector3D, QColor, QQuaternion, QVector4D
 from PySide6.Qt3DRender import Qt3DRender
 import numpy as np
 from Plane import Plane
 from Projectile import Projectile
 from PlaneCameraController import PlaneCameraController
+from PlaneInfoPopup import PlaneInfoPopup
 
 class Globe3DWidget(QtWidgets.QWidget):
+    on_plane_clicked = QtCore.Signal(object)
+
     def __init__(self):
         super().__init__()
 
@@ -33,6 +36,13 @@ class Globe3DWidget(QtWidgets.QWidget):
 
         # self.starting_speed = 100
         self.points = []
+
+        self.plane_popup = PlaneInfoPopup(self.container)
+        self.plane_popup.setWindowFlags(
+            QtCore.Qt.Tool |
+            QtCore.Qt.FramelessWindowHint
+        )
+        self.plane_popup.hide()
 
     def create_camera(self):
         camera = self.view.camera()
@@ -164,9 +174,15 @@ class Globe3DWidget(QtWidgets.QWidget):
         # pos = self.globe_transform.rotation().rotatedVector(pos)
         self.plane_transform.setTranslation(pos)
 
+        self.plane_picker = Qt3DRender.QObjectPicker(entity)
+        self.plane_picker.setHoverEnabled(True)
+
+        self.plane_picker.clicked.connect(self.on_plane_clicked.emit)
+
         entity.addComponent(mesh)
         entity.addComponent(material)
         entity.addComponent(self.plane_transform)
+        entity.addComponent(self.plane_picker)
 
         self.plane_item = entity
         
@@ -245,3 +261,78 @@ class Globe3DWidget(QtWidgets.QWidget):
             self.projectile_item.deleteLater()
             delattr(self, 'projectile_item')
             delattr(self, 'projectile_transform')
+
+    def world_to_screen(self, world_pos: QVector3D):
+        camera = self.view.camera()
+
+        view = camera.viewMatrix()
+        proj = camera.projectionMatrix()
+
+        mvp = proj * view
+
+        vec = QVector4D(world_pos.x(), world_pos.y(), world_pos.z(), 1.0)
+        clip = mvp.map(vec)
+
+        if clip.w() <= 0.0:
+            return None
+
+        ndc = clip / clip.w()
+
+        if abs(ndc.x()) > 1 or abs(ndc.y()) > 1:
+            return None
+
+        x = (ndc.x() + 1) * 0.5 * self.container.width()
+        y = (1 - ndc.y()) * 0.5 * self.container.height()
+
+        return QtCore.QPointF(x, y)
+    
+    def show_plane_popup(self, text, plane_world_pos):
+        self.plane_popup.set_text(text)
+
+        self.plane_popup.show()
+        self.plane_popup.raise_()
+        self.plane_popup.activateWindow()
+
+        QtWidgets.QApplication.processEvents()
+
+        self.update_plane_popup_position(plane_world_pos)
+
+        print("popup geom:", self.plane_popup.geometry())
+        print("visible:", self.plane_popup.isVisible())
+
+    def update_plane_popup_position(self, plane_world_pos = None):
+        if not self.plane_popup.isVisible():
+            return
+
+        camera = self.view.camera()
+
+        view = camera.viewMatrix()
+        proj = camera.projectionMatrix()
+
+        mvp = proj * view
+
+        vec = QVector4D(
+            plane_world_pos.x(),
+            plane_world_pos.y(),
+            plane_world_pos.z(),
+            1.0
+        )
+
+        clip = mvp.map(vec)
+
+        if clip.w() <= 0:
+            return
+
+        ndc = clip / clip.w()
+
+        # poza ekranem
+        if abs(ndc.x()) > 1 or abs(ndc.y()) > 1:
+            return
+
+        x = (ndc.x() + 1) * 0.5 * self.container.width()
+        y = (1 - ndc.y()) * 0.5 * self.container.height()
+
+        print(self.container.size())
+        print(x, y)
+
+        self.plane_popup.move(int(x) + 15, int(y) - 15)

@@ -35,6 +35,8 @@ class Plane:
         print(self.T)
 
         self.R = 6371e3 #promien Ziemi w metrach
+        self.mean_velocity = None
+        self.altitude = 0
         
     def get_plane_position(self, t):
         # f = np.clip(t / self.T, 0, 1)
@@ -52,12 +54,23 @@ class Plane:
         return self.current_lat, self.current_lon
     
     def calculate_mean_velocity(self):
-        delta_lat = self.end_lat_rad - self.start_lat_rad
-        delta_lon = self.end_lon_rad - self.start_lon_rad
-        #Haversine formula
-        a = np.sin(delta_lat/2) ** 2 + np.cos(self.start_lat_rad) * np.cos(self.end_lat_rad) * np.sin(delta_lon/2) ** 2
-        c = 2 * np.atan2(np.sqrt(a), np.sqrt(1-a))
+        if self.mean_velocity is None:
+            delta_lat = self.end_lat_rad - self.start_lat_rad
+            delta_lon = self.end_lon_rad - self.start_lon_rad
+            #Haversine formula
+            a = np.sin(delta_lat/2) ** 2 + np.cos(self.start_lat_rad) * np.cos(self.end_lat_rad) * np.sin(delta_lon/2) ** 2
+            c = 2 * np.atan2(np.sqrt(a), np.sqrt(1-a))
 
-        d = self.R * c
+            d = self.R * c
 
-        return d / self.T
+            self.mean_velocity = d / self.T
+
+        return self.mean_velocity
+    
+    def currentStats(self):
+        return {
+            "latitude": self.current_lat,
+            "longitude": self.current_lon,
+            "mean velocity": self.calculate_mean_velocity(),
+            "altitude": self.altitude
+        }

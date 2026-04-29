@@ -88,6 +88,11 @@ class WindowWidget(QtWidgets.QWidget):
             self.clock = SimulationClock(self.starting_speed)
         self.plane = plane
 
+        if type(self.simulation_view) == MapWidget:
+            self.simulation_view.on_plane_clicked.connect(self.on_plane_clicked)
+        elif type(self.simulation_view) == Globe3DWidget:
+            self.simulation_view.on_plane_clicked.connect(self.on_plane_globe_clicked)
+
     def add_projectile(self, projectile: Projectile):
         self.simulation_view.add_projectile(projectile)
 
@@ -115,6 +120,9 @@ class WindowWidget(QtWidgets.QWidget):
         lat, lon = self.plane.get_plane_position(t)
         self.simulation_view.update_plane_pos(lat, lon)
         self.change_time_label(t)
+
+        if self.simulation_view.plane_popup.isVisible():
+            self.simulation_view.update_plane_popup_position()
 
         if has_projectile and t >= self.projectile.t1:
             lat, lon = self.projectile.calculate_current_cords(t)
@@ -163,7 +171,7 @@ class WindowWidget(QtWidgets.QWidget):
         point = Point(lat, lon, None)
         if hasattr(self, 'projectile'):
             delattr(self, 'projectile')
-            self.simulation_view.view.removeItem(self.projectile_item)
+            self.simulation_view.view.removeItem(self.simulation_view.projectile_item)
 
         t = self.clock.now()
         velocity = 1 * self.plane.calculate_mean_velocity()
@@ -193,6 +201,19 @@ class WindowWidget(QtWidgets.QWidget):
             self.projectile.start_point = point
             self.projectile.calculate_intercept_angle(t, velocity)
             self.simulation_view.update_projectile_pos(lat, lon)
+
+    def on_plane_clicked(self):
+        stats = self.plane.currentStats()
+        text = "\n".join(f"{k}: {v}" for k, v in stats.items())
+
+        self.simulation_view.show_plane_popup(text)
+
+    def on_plane_globe_clicked(self, event):
+        stats = self.plane.currentStats()
+        text = "\n".join(f"{k}: {v}" for k, v in stats.items())
+        plane_world_pos = event.worldIntersection()
+
+        self.simulation_view.show_plane_popup(text, plane_world_pos)
 
     def on_spinbox_value_changed(self, value):
         current_time = self.clock.now()

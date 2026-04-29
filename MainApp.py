@@ -56,7 +56,7 @@ class MainApp(QtWidgets.QMainWindow):
         self.globe_screen.go_back.connect(self.show_start_screen)
         self.globe_screen.switch_view.connect(self.switch_view)
 
-        self.use_3d = True
+        self.use_3d = False
 
     def create_start_screen(self):
         widget = QtWidgets.QWidget()

@@ -1,13 +1,16 @@
 import numpy as np
-from PySide6 import QtWidgets, QtGui
+from PySide6 import QtWidgets, QtGui, QtCore
 import pyqtgraph as pg
 import geopandas as gpd
 from shapely.geometry import Polygon, MultiPolygon
 from Plane import Plane
 from Projectile import Projectile
 from MapViewBox import MapViewBox
+from PlaneInfoPopup import PlaneInfoPopup
 
 class MapWidget(QtWidgets.QWidget):
+    on_plane_clicked = QtCore.Signal()
+
     def __init__(self):
         super().__init__()
 
@@ -25,6 +28,11 @@ class MapWidget(QtWidgets.QWidget):
         self.draw_world()
 
         self.points = []
+
+        self.plane_popup = PlaneInfoPopup(self)
+        self.plane_popup.hide()
+
+        self.view.sigRangeChanged.connect(self.update_plane_popup_position)
 
     def draw_world(self):
         world = gpd.read_file("ne_50m_admin_0_countries/ne_50m_admin_0_countries.shp")
@@ -76,6 +84,10 @@ class MapWidget(QtWidgets.QWidget):
             pen=pg.mkPen('white', width=1)
         )
 
+        self.plane_item.sigClicked.connect(
+            lambda *args: self.on_plane_clicked.emit()
+        )
+
         self.view.addItem(self.plane_item)
     
     def add_projectile(self, projectile: Projectile):
@@ -106,3 +118,24 @@ class MapWidget(QtWidgets.QWidget):
 
         if hasattr(self, 'projectile_item'):
             self.view.removeItem(self.projectile_item)
+
+    def show_plane_popup(self, text):
+        self.plane_popup.set_text(text)
+        self.plane_popup.show()
+        self.update_plane_popup_position()
+
+    def update_plane_popup_position(self):
+        if not self.plane_popup.isVisible():
+            return
+
+        if not hasattr(self, "plane_item"):
+            return
+
+        point = self.plane_item.points()[0]
+        scene_pos = self.view.mapViewToScene(point.pos())
+        widget_pos = self.graph_widget.mapFromScene(scene_pos)
+
+        self.plane_popup.move(
+            widget_pos.x() + 15,
+            widget_pos.y() - 15
+        )

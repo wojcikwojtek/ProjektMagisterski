@@ -69,8 +69,8 @@ class Plane:
     
     def currentStats(self):
         return {
-            "latitude": self.current_lat,
-            "longitude": self.current_lon,
-            "mean velocity": self.calculate_mean_velocity(),
+            "latitude": "{:.4f}".format(self.current_lat),
+            "longitude": "{:.4f}".format(self.current_lon),
+            "mean velocity": "{:.4f}".format(self.calculate_mean_velocity()) + " m/s",
             "altitude": self.altitude
         }

@@ -88,10 +88,7 @@ class WindowWidget(QtWidgets.QWidget):
             self.clock = SimulationClock(self.starting_speed)
         self.plane = plane
 
-        if type(self.simulation_view) == MapWidget:
-            self.simulation_view.on_plane_clicked.connect(self.on_plane_clicked)
-        elif type(self.simulation_view) == Globe3DWidget:
-            self.simulation_view.on_plane_clicked.connect(self.on_plane_globe_clicked)
+        self.simulation_view.on_plane_clicked.connect(self.on_plane_clicked)
 
     def add_projectile(self, projectile: Projectile):
         self.simulation_view.add_projectile(projectile)
@@ -122,6 +119,8 @@ class WindowWidget(QtWidgets.QWidget):
         self.change_time_label(t)
 
         if self.simulation_view.plane_popup.isVisible():
+            text = self.get_plane_stats()
+            self.simulation_view.plane_popup.set_text(text)
             self.simulation_view.update_plane_popup_position()
 
         if has_projectile and t >= self.projectile.t1:
@@ -202,18 +201,15 @@ class WindowWidget(QtWidgets.QWidget):
             self.projectile.calculate_intercept_angle(t, velocity)
             self.simulation_view.update_projectile_pos(lat, lon)
 
-    def on_plane_clicked(self):
+    def get_plane_stats(self):
         stats = self.plane.currentStats()
         text = "\n".join(f"{k}: {v}" for k, v in stats.items())
+        return text
+
+    def on_plane_clicked(self):
+        text = self.get_plane_stats()
 
         self.simulation_view.show_plane_popup(text)
-
-    def on_plane_globe_clicked(self, event):
-        stats = self.plane.currentStats()
-        text = "\n".join(f"{k}: {v}" for k, v in stats.items())
-        plane_world_pos = event.worldIntersection()
-
-        self.simulation_view.show_plane_popup(text, plane_world_pos)
 
     def on_spinbox_value_changed(self, value):
         current_time = self.clock.now()

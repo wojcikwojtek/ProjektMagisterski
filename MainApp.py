@@ -90,8 +90,12 @@ class MainApp(QtWidgets.QMainWindow):
         self.stack.setCurrentIndex(0)
         if self.use_3d:
             self.globe_screen.clear()
+            if self.globe_screen.simulation_view.plane_popup.isVisible():
+                self.globe_screen.simulation_view.plane_popup.hide()
         else:
             self.map_screen.clear()
+            if self.map_screen.simulation_view.plane_popup.isVisible():
+                self.map_screen.simulation_view.plane_popup.hide()
     
     def visualize_flight(self, item):
         flight_data = item.data(QtCore.Qt.UserRole)
@@ -143,6 +147,8 @@ class MainApp(QtWidgets.QMainWindow):
                 self.map_screen.toggle_pause()
                 self.map_screen.animate_plane()
                 self.map_screen.toggle_pause()
+            if self.globe_screen.simulation_view.plane_popup.isVisible():
+                self.globe_screen.simulation_view.plane_popup.hide()
             self.map_screen.spinbox.setValue(self.globe_screen.spinbox.value())
             self.stack.setCurrentWidget(self.map_screen)
             self.use_3d = False 
@@ -166,6 +172,8 @@ class MainApp(QtWidgets.QMainWindow):
                 self.globe_screen.toggle_pause()
                 self.globe_screen.animate_plane()
                 self.globe_screen.toggle_pause()
+            if self.map_screen.simulation_view.plane_popup.isVisible():
+                self.map_screen.simulation_view.plane_popup.hide()
             self.globe_screen.spinbox.setValue(self.map_screen.spinbox.value())
             self.stack.setCurrentWidget(self.globe_screen)
             self.use_3d = True

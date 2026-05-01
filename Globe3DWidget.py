@@ -261,32 +261,8 @@ class Globe3DWidget(QtWidgets.QWidget):
             self.projectile_item.deleteLater()
             delattr(self, 'projectile_item')
             delattr(self, 'projectile_transform')
-
-    def world_to_screen(self, world_pos: QVector3D):
-        camera = self.view.camera()
-
-        view = camera.viewMatrix()
-        proj = camera.projectionMatrix()
-
-        mvp = proj * view
-
-        vec = QVector4D(world_pos.x(), world_pos.y(), world_pos.z(), 1.0)
-        clip = mvp.map(vec)
-
-        if clip.w() <= 0.0:
-            return None
-
-        ndc = clip / clip.w()
-
-        if abs(ndc.x()) > 1 or abs(ndc.y()) > 1:
-            return None
-
-        x = (ndc.x() + 1) * 0.5 * self.container.width()
-        y = (1 - ndc.y()) * 0.5 * self.container.height()
-
-        return QtCore.QPointF(x, y)
     
-    def show_plane_popup(self, text, plane_world_pos):
+    def show_plane_popup(self, text):
         self.plane_popup.set_text(text)
 
         self.plane_popup.show()
@@ -295,12 +271,9 @@ class Globe3DWidget(QtWidgets.QWidget):
 
         QtWidgets.QApplication.processEvents()
 
-        self.update_plane_popup_position(plane_world_pos)
+        self.update_plane_popup_position()
 
-        print("popup geom:", self.plane_popup.geometry())
-        print("visible:", self.plane_popup.isVisible())
-
-    def update_plane_popup_position(self, plane_world_pos = None):
+    def update_plane_popup_position(self):
         if not self.plane_popup.isVisible():
             return
 
@@ -310,6 +283,10 @@ class Globe3DWidget(QtWidgets.QWidget):
         proj = camera.projectionMatrix()
 
         mvp = proj * view
+
+        local = self.plane_transform.translation()
+        rot = self.globe_transform.rotation()
+        plane_world_pos = rot.rotatedVector(local)
 
         vec = QVector4D(
             plane_world_pos.x(),
@@ -331,8 +308,5 @@ class Globe3DWidget(QtWidgets.QWidget):
 
         x = (ndc.x() + 1) * 0.5 * self.container.width()
         y = (1 - ndc.y()) * 0.5 * self.container.height()
-
-        print(self.container.size())
-        print(x, y)
 
         self.plane_popup.move(int(x) + 15, int(y) - 15)

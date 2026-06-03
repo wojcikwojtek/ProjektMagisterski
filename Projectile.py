@@ -2,6 +2,7 @@ import numpy as np
 from Plane import Plane
 from Point import Point
 from scipy import optimize
+import time
 
 class Projectile():
     R = 6371e3
@@ -59,7 +60,8 @@ class Projectile():
     
     #Narazie dla a biore punkt poczatkowy potestowac co jak dam kropke w trakcie lotu i czy tego nie zmienic na aktualny punkt
     def calculate_intercept_angle(self, current_time, velocity):
-        #zakladam ze omega1 = omega2 czyli ze poruszaja sie z ta sama predkoscia
+        start = time.perf_counter()
+
         a = self.latlon_to_vector(self.intercepted_plane.start_point.latitude, self.intercepted_plane.start_point.longitude)
         self.b = self.latlon_to_vector(self.start_point.latitude, self.start_point.longitude)
         self.t1 = current_time
@@ -122,6 +124,9 @@ class Projectile():
 
         self.theta = np.arctan2(U[1]*np.cos(theta1) + W[1]*np.sin(theta1), U[0]*np.cos(theta1) + W[0]*np.sin(theta1))
         self.v2_hat = np.cos(self.theta) * u1 + np.sin(self.theta) * u2
+
+        end = time.perf_counter()
+        print(f"Czas wykonania calculate_intercept_angle: {end - start:.6f} s")
     
     def calculate_current_cords(self, t):
         # if t > self.intercept_time:

@@ -263,6 +263,10 @@ class Globe3DWidget(QtWidgets.QWidget):
             delattr(self, 'projectile_transform')
     
     def show_plane_popup(self, text):
+        if self.plane_popup.isVisible():
+            self.plane_popup.hide()
+            return
+        
         self.plane_popup.set_text(text)
 
         self.plane_popup.show()

@@ -173,7 +173,7 @@ class WindowWidget(QtWidgets.QWidget):
             self.simulation_view.view.removeItem(self.simulation_view.projectile_item)
 
         t = self.clock.now()
-        velocity = 1 * self.plane.calculate_mean_velocity()
+        velocity = 1.743 * self.plane.calculate_mean_velocity()
         self.add_projectile(Projectile(point, self.plane, t, velocity))
 
     def clicked_on_globe(self, event):

@@ -1,6 +1,7 @@
 from Point import Point
 from PySide6.QtGui import QVector3D
 import numpy as np
+from DronePathTest import compute_path, convert_geodetic_to_ecef, convert_ecef_to_geodetic
 
 class Plane:
     def __init__(self, start_point: Point, end_point: Point):
@@ -32,26 +33,80 @@ class Plane:
 
         dt = end_point.time - start_point.time
         self.T = dt.total_seconds()
-        print(self.T)
+        # print(self.T)
 
         self.R = 6371e3 #promien Ziemi w metrach
+        #Zmienic to potem 
         self.mean_velocity = None
-        self.altitude = 0
-        
+        self.mean_velocity = self.calculate_mean_velocity()
+        self.altitude = 120
+
+        X0 = np.array(convert_geodetic_to_ecef(self.start_point.latitude, self.start_point.longitude, 120))
+        v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+        X1 = np.array(convert_geodetic_to_ecef(self.end_point.latitude, self.end_point.longitude, 120))
+        v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+        nmax = 1.2002
+        self.path = compute_path(X0, X1, v1, v2, self.mean_velocity, nmax)
+        line = np.linspace(self.path["P1"], self.path["P2"], 200)
+        self.trajectory =  np.vstack([
+            self.path["arc1"],
+            line[1:],
+            self.path["arc2"][1:]
+        ])
+        self.ds = np.linalg.norm(
+            np.diff(self.trajectory, axis=0),
+            axis=1
+        )
+
+        self.cum_s = np.concatenate([
+            [0],
+            np.cumsum(self.ds)
+        ])
+
     def get_plane_position(self, t):
-        # f = np.clip(t / self.T, 0, 1)
-        f = t / self.T
+        # # f = np.clip(t / self.T, 0, 1)
+        # f = t / self.T
 
-        A = np.sin((1-f)*self.delta) / self.sin_delta
-        B = np.sin(f*self.delta) / self.sin_delta
+        # A = np.sin((1-f)*self.delta) / self.sin_delta
+        # B = np.sin(f*self.delta) / self.sin_delta
 
-        x = A*self.cos_start_lat*self.cos_start_lon + B*self.cos_end_lat*self.cos_end_lon
-        y = A*self.cos_start_lat*self.sin_start_lon + B*self.cos_end_lat*self.sin_end_lon
-        z = A*self.sin_start_lat + B*self.sin_end_lat
+        # x = A*self.cos_start_lat*self.cos_start_lon + B*self.cos_end_lat*self.cos_end_lon
+        # y = A*self.cos_start_lat*self.sin_start_lon + B*self.cos_end_lat*self.sin_end_lon
+        # z = A*self.sin_start_lat + B*self.sin_end_lat
 
-        self.current_lat = np.degrees(np.arctan2(z, np.sqrt(x**2 + y**2)))
-        self.current_lon = np.degrees(np.arctan2(y, x))
-        return self.current_lat, self.current_lon
+        # self.current_lat = np.degrees(np.arctan2(z, np.sqrt(x**2 + y**2)))
+        # self.current_lon = np.degrees(np.arctan2(y, x))
+        # return self.current_lat, self.current_lon
+
+        total_length = self.cum_s[-1]
+
+        s = self.mean_velocity * t 
+
+        if s >= total_length:
+            s = total_length
+
+        idx = np.searchsorted(self.cum_s, s)
+
+        if idx == 0:
+            pos = self.trajectory[0]
+
+        elif idx >= len(self.trajectory):
+            pos = self.trajectory[-1]
+
+        else:
+            s0 = self.cum_s[idx - 1]
+            s1 = self.cum_s[idx]
+
+            alpha = (s - s0) / (s1 - s0)
+
+            pos = (
+                (1 - alpha) * self.trajectory[idx - 1]
+                + alpha * self.trajectory[idx]
+            )
+
+        lat, lon, height = convert_ecef_to_geodetic(pos[0], pos[1], pos[2])
+        
+        return lat, lon
     
     def calculate_mean_velocity(self):
         if self.mean_velocity is None:

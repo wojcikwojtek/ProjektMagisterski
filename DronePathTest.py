@@ -168,155 +168,210 @@ def convert_geodetic_to_ecef(lat, lon, height):
 
     return (X, Y, Z)
 
-waypoints = [
-    ("Warsaw",   52.2297, 21.0122, 120),
-    ("Gdansk",   54.3520, 18.6466, 120),
-    ("Szczecin", 53.4285, 14.5528, 120),
-    ("Berlin",   52.5200, 13.4050, 120),
-]
+def convert_ecef_to_geodetic(X, Y, Z):
+    a = 6378137.0      # promień równikowy [m]
+    b = 6356752.3      # promień biegunowy [m]
 
-va = 15.0      # m/s
-nmax = 1.2002
-g = 9.81
+    e2 = 1 - (b**2 / a**2)      # pierwsza mimośrodowość²
+    ep2 = (a**2 / b**2) - 1     # druga mimośrodowość²
 
-# X0 = np.array([0.0, 0.0, 0.0])
-X0 = np.array(convert_geodetic_to_ecef(52.2297, 21.0122, 120))
-v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
-# X1 = np.array([-300.0, 400.0, 500.0])
-X1 = np.array(convert_geodetic_to_ecef(54.3520, 18.6466, 120))
-v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
-# X2 = np.array([100.0, 200.0, 600.0])
-X2 = np.array(convert_geodetic_to_ecef(53.4285, 14.5528, 120))
-v3 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+    lon = np.arctan2(Y, X)
 
-result = compute_path(X0, X1, v1, v2, va, nmax)
+    p = np.sqrt(X**2 + Y**2)
 
-arc1 = result["arc1"]
-arc2 = result["arc2"]
-P1 = result["P1"]
-P2 = result["P2"]
-length = result["length"]
+    theta = np.arctan2(Z * a, p * b)
 
-result1 = compute_path(X1, X2, v2, v3, va, nmax)
-arc2_1 = result1["arc1"]
-arc3 = result1["arc2"]
-P2_1 = result1["P1"]
-P3 = result1["P2"]
-length_1 = result1["length"]
+    lat = np.arctan2(
+        Z + ep2 * b * np.sin(theta)**3,
+        p - e2 * a * np.cos(theta)**3
+    )
 
-line = np.linspace(P1, P2, 200)
+    N = a / np.sqrt(1 - e2 * np.sin(lat)**2)
 
-line_1 = np.linspace(P2_1, P3, 200)
+    height = p / np.cos(lat) - N
 
-#[1:] żeby nie powielać puntków
-trajectory = np.vstack([
-    arc1,
-    line[1:],
-    arc2[1:],
-    arc2_1[1:],
-    line_1[1:],
-    arc3[1:]
-])
+    lat = np.degrees(lat)
+    lon = np.degrees(lon)
 
-#dlugosc skumulowana
-ds = np.linalg.norm(
-    np.diff(trajectory, axis=0),
-    axis=1
-)
+    return lat, lon, height
 
-cum_s = np.concatenate([
-    [0],
-    np.cumsum(ds)
-])
+def great_circle(P1, P2, N=100, R=6378137.0):
 
-# 3. Konfiguracja wykresu 3D
-fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(111, projection='3d')
+    u1 = P1 / np.linalg.norm(P1)
+    u2 = P2 / np.linalg.norm(P2)
 
-# Rysowanie poszczególnych segmentów
-ax.plot(arc1[:, 0], arc1[:, 1], arc1[:, 2], 'r-', linewidth=2.5, label='Zakręt początkowy')
-ax.plot([P1[0], P2[0]], [P1[1], P2[1]], [P1[2], P2[2]], 'g-', linewidth=2.5, label='Lot prostoliniowy')
-ax.plot(arc2[:, 0], arc2[:, 1], arc2[:, 2], 'b-', linewidth=2.5, label='Zakręt końcowy')
+    omega = np.arccos(
+        np.clip(np.dot(u1, u2), -1.0, 1.0)
+    )
 
-ax.plot(arc2_1[:, 0], arc2_1[:, 1], arc2_1[:, 2], 'r-', linewidth=2.5, label='Zakręt początkowy1')
-ax.plot([P2_1[0], P3[0]], [P2_1[1], P3[1]], [P2_1[2], P3[2]], 'g-', linewidth=2.5, label='Lot prostoliniowy1')
-ax.plot(arc3[:, 0], arc3[:, 1], arc3[:, 2], 'b-', linewidth=2.5, label='Zakręt końcowy1')
+    t = np.linspace(0, 1, N)
 
-# Zaznaczenie punktów kluczowych
-ax.scatter(*X0, color='black', s=60, label='X0 (Start)', zorder=5)
-ax.scatter(*X1, color='black', s=60, label='Xf (Koniec)', zorder=5)
-ax.scatter(*P1, color='orange', s=40, label='P1 (Koniec zakrętu 1)')
-ax.scatter(*P2, color='purple', s=40, label='P2 (Początek zakrętu 2)')
+    points = []
 
-ax.scatter(*X1, color='black', s=60, label='X1 (Start)', zorder=5)
-ax.scatter(*X2, color='black', s=60, label='X2 (Koniec)', zorder=5)
-ax.scatter(*P2_1, color='orange', s=40, label='P2_1 (Koniec zakrętu 1)')
-ax.scatter(*P3, color='purple', s=40, label='P3 (Początek zakrętu 2)')
+    for tt in t:
 
-# Opisy osi i legenda
-ax.set_xlabel('Oś X [m]')
-ax.set_ylabel('Oś Y [m]')
-ax.set_zlabel('Oś Z [m]')
-ax.set_title('Wizualizacja Trajektorii Lotu Drona 3D')
-ax.legend()
-
-# Wyświetlenie wykresu
-plt.tight_layout()
-
-total_length = cum_s[-1]
-total_time = total_length / va
-
-drone, = ax.plot(
-    [trajectory[0,0]],
-    [trajectory[0,1]],
-    [trajectory[0,2]],
-    'ro',
-    markersize=15
-)
-
-fps = 30
-nframes = int(total_time * fps)
-
-def update(frame):
-    t = frame / fps 
-
-    t = t * 1000
-
-    s = va * t 
-
-    if s >= total_length:
-        s = total_length
-
-    idx = np.searchsorted(cum_s, s)
-
-    if idx == 0:
-        pos = trajectory[0]
-
-    elif idx >= len(trajectory):
-        pos = trajectory[-1]
-
-    else:
-        s0 = cum_s[idx - 1]
-        s1 = cum_s[idx]
-
-        alpha = (s - s0) / (s1 - s0)
-
-        pos = (
-            (1 - alpha) * trajectory[idx - 1]
-            + alpha * trajectory[idx]
+        p = (
+            np.sin((1-tt)*omega)/np.sin(omega)*u1 +
+            np.sin(tt*omega)/np.sin(omega)*u2
         )
+
+        p /= np.linalg.norm(p)
+
+        points.append(R*p)
+
+    return np.array(points)
+
+# waypoints = [
+#     ("Warsaw",   52.2297, 21.0122, 120),
+#     ("Gdansk",   54.3520, 18.6466, 120),
+#     ("Szczecin", 53.4285, 14.5528, 120),
+#     ("Berlin",   52.5200, 13.4050, 120),
+# ]
+
+# va = 15.0      # m/s
+# nmax = 1.2002
+# g = 9.81
+
+# # X0 = np.array([0.0, 0.0, 0.0])
+# X0 = np.array(convert_geodetic_to_ecef(52.2297, 21.0122, 120))
+# v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+# # X1 = np.array([-300.0, 400.0, 500.0])
+# X1 = np.array(convert_geodetic_to_ecef(54.3520, 18.6466, 120))
+# v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+# # X2 = np.array([100.0, 200.0, 600.0])
+# X2 = np.array(convert_geodetic_to_ecef(53.4285, 14.5528, 120))
+# v3 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+
+# result = compute_path(X0, X1, v1, v2, va, nmax)
+
+# arc1 = result["arc1"]
+# arc2 = result["arc2"]
+# P1 = result["P1"]
+# P2 = result["P2"]
+# length = result["length"]
+
+# result1 = compute_path(X1, X2, v2, v3, va, nmax)
+# arc2_1 = result1["arc1"]
+# arc3 = result1["arc2"]
+# P2_1 = result1["P1"]
+# P3 = result1["P2"]
+# length_1 = result1["length"]
+
+# #???? idk czy tu nie dać jak było czyli line = np.linspace(P1, P2, 200)
+# line = great_circle(P1, P2, 500)
+
+# line_1 = great_circle(P2_1, P3, 500)
+
+
+# #[1:] żeby nie powielać puntków
+# trajectory = np.vstack([
+#     arc1,
+#     line[1:],
+#     arc2[1:],
+#     arc2_1[1:],
+#     line_1[1:],
+#     arc3[1:]
+# ])
+
+# #dlugosc skumulowana
+# ds = np.linalg.norm(
+#     np.diff(trajectory, axis=0),
+#     axis=1
+# )
+
+# cum_s = np.concatenate([
+#     [0],
+#     np.cumsum(ds)
+# ])
+
+# # 3. Konfiguracja wykresu 3D
+# fig = plt.figure(figsize=(10, 8))
+# ax = fig.add_subplot(111, projection='3d')
+
+# # Rysowanie poszczególnych segmentów
+# ax.plot(arc1[:, 0], arc1[:, 1], arc1[:, 2], 'r-', linewidth=2.5, label='Zakręt początkowy')
+# ax.plot(line[:, 0], line[:, 1], line[:, 2], 'g-', linewidth=2.5, label='Lot prostoliniowy')
+# ax.plot(arc2[:, 0], arc2[:, 1], arc2[:, 2], 'b-', linewidth=2.5, label='Zakręt końcowy')
+
+# ax.plot(arc2_1[:, 0], arc2_1[:, 1], arc2_1[:, 2], 'r-', linewidth=2.5, label='Zakręt początkowy1')
+# ax.plot(line_1[:, 0], line_1[:, 1], line_1[:, 2], 'g-', linewidth=2.5, label='Lot prostoliniowy1')
+# ax.plot(arc3[:, 0], arc3[:, 1], arc3[:, 2], 'b-', linewidth=2.5, label='Zakręt końcowy1')
+
+# # Zaznaczenie punktów kluczowych
+# ax.scatter(*X0, color='black', s=60, label='X0 (Start)', zorder=5)
+# ax.scatter(*X1, color='black', s=60, label='Xf (Koniec)', zorder=5)
+# ax.scatter(*P1, color='orange', s=40, label='P1 (Koniec zakrętu 1)')
+# ax.scatter(*P2, color='purple', s=40, label='P2 (Początek zakrętu 2)')
+
+# ax.scatter(*X1, color='black', s=60, label='X1 (Start)', zorder=5)
+# ax.scatter(*X2, color='black', s=60, label='X2 (Koniec)', zorder=5)
+# ax.scatter(*P2_1, color='orange', s=40, label='P2_1 (Koniec zakrętu 1)')
+# ax.scatter(*P3, color='purple', s=40, label='P3 (Początek zakrętu 2)')
+
+# # Opisy osi i legenda
+# ax.set_xlabel('Oś X [m]')
+# ax.set_ylabel('Oś Y [m]')
+# ax.set_zlabel('Oś Z [m]')
+# ax.set_title('Wizualizacja Trajektorii Lotu Drona 3D')
+# ax.legend()
+
+# # Wyświetlenie wykresu
+# plt.tight_layout()
+
+# total_length = cum_s[-1]
+# total_time = total_length / va
+
+# drone, = ax.plot(
+#     [trajectory[0,0]],
+#     [trajectory[0,1]],
+#     [trajectory[0,2]],
+#     'ro',
+#     markersize=15
+# )
+
+# fps = 30
+# nframes = int(total_time * fps)
+
+# def update(frame):
+#     t = frame / fps 
+
+#     t = t * 1000
+
+#     s = va * t 
+
+#     if s >= total_length:
+#         s = total_length
+
+#     idx = np.searchsorted(cum_s, s)
+
+#     if idx == 0:
+#         pos = trajectory[0]
+
+#     elif idx >= len(trajectory):
+#         pos = trajectory[-1]
+
+#     else:
+#         s0 = cum_s[idx - 1]
+#         s1 = cum_s[idx]
+
+#         alpha = (s - s0) / (s1 - s0)
+
+#         pos = (
+#             (1 - alpha) * trajectory[idx - 1]
+#             + alpha * trajectory[idx]
+#         )
     
-    drone.set_data([pos[0]], [pos[1]])
-    drone.set_3d_properties([pos[2]])
+#     drone.set_data([pos[0]], [pos[1]])
+#     drone.set_3d_properties([pos[2]])
 
-    return drone,
+#     return drone,
 
-ani = FuncAnimation(
-    fig,
-    update,
-    frames=nframes,
-    interval=1000/fps,
-    blit=False
-)
+# ani = FuncAnimation(
+#     fig,
+#     update,
+#     frames=nframes,
+#     interval=1000/fps,
+#     blit=False
+# )
 
-plt.show()
+# plt.show()

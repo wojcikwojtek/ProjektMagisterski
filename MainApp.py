@@ -12,24 +12,50 @@ class MainApp(QtWidgets.QMainWindow):
     flights_data = [
         {
             "id": 1, 
-            "from": "Warszawa", 
-            "from_point": Point(52.159499362, 20.966996132, datetime(2026, 3, 14, 8, 0, 0)), 
-            "to": "Nowy Jork",
-            "to_point": Point(40.641766, -73.780968, datetime(2026, 3, 14, 16, 0, 0))
+            "waypoints": [
+                {
+                    "name": "Warszawa", 
+                    "point": Point(52.159499362, 20.966996132, datetime(2026, 3, 14, 8, 0, 0))
+                },
+                {
+                    "name": "Nowy Jork",
+                    "point": Point(40.641766, -73.780968, datetime(2026, 3, 14, 16, 0, 0))
+                }
+            ]
         },
         {
             "id": 2, 
-            "from": "Berlin",
-            "from_point": Point(52.3666652, 13.501997992, datetime(2026, 3, 22, 15, 0, 0)),
-            "to": "Londyn",
-            "to_point": Point(51.460266, -0.438965, datetime(2026, 3, 22, 17, 0, 0))
+            "waypoints": [
+                {
+                    "name": "Warszawa", 
+                    "point": Point(52.159499362, 20.966996132, datetime(2026, 3, 14, 8, 0, 0))
+                },
+                {
+                    "name": "Gdańsk",
+                    "point": Point(54.3775, 18.466111, datetime(2026, 3, 14, 8, 28, 0)) 
+                },
+                {
+                    "name": "Szczecin",
+                    "point": Point(53.4285, 14.5528, datetime(2026, 3, 14, 8, 56, 0))
+                },
+                # {
+                #     "name": "Berlin",
+                #     "point": Point(52.3666652, 13.501997992, datetime(2026, 3, 14, 9, 9, 0))
+                # }
+            ]
         },
         {
             "id": 3, 
-            "from": "Tokio", 
-            "from_point": Point(35.549083, 139.784597, datetime(2026, 3, 22, 10, 0, 0)),
-            "to": "Sydney",
-            "to_point": Point(-33.947346, 151.177222, datetime(2026, 3, 22, 19, 45, 0))
+            "waypoints": [
+                {
+                    "name": "Tokio", 
+                    "point": Point(35.549083, 139.784597, datetime(2026, 3, 22, 10, 0, 0))
+                },
+                {
+                    "name": "Sydney",
+                    "point": Point(-33.947346, 151.177222, datetime(2026, 3, 22, 19, 45, 0))
+                }
+            ]
         }
     ]
 
@@ -71,9 +97,13 @@ class MainApp(QtWidgets.QMainWindow):
 
         self.flight_list = QtWidgets.QListWidget()
         for flight in self.flights_data:
-            item = QtWidgets.QListWidgetItem(
-                f"{flight['id']}: {flight['from']} -> {flight['to']}"
-            )
+            flight_label = f"{flight['id']}:"
+            for i in range(len(flight["waypoints"])):
+                waypoint = flight['waypoints'][i]
+                flight_label += f" {waypoint['name']}"
+                if i != len(flight["waypoints"]) - 1:
+                    flight_label += " ->"
+            item = QtWidgets.QListWidgetItem(flight_label)
             item.setData(QtCore.Qt.UserRole, flight)
             self.flight_list.addItem(item)
 
@@ -99,30 +129,25 @@ class MainApp(QtWidgets.QMainWindow):
     
     def visualize_flight(self, item):
         flight_data = item.data(QtCore.Qt.UserRole)
+        points = [wp["point"] for wp in flight_data["waypoints"]]
 
-        plane = Plane(flight_data['from_point'], flight_data['to_point'])
+        plane = Plane(points)
         if self.use_3d:
-            self.globe_screen.simulation_view.add_point(
-                flight_data['from_point'].latitude, 
-                flight_data['from_point'].longitude
-            )
-            self.globe_screen.simulation_view.add_point(
-                flight_data['to_point'].latitude, 
-                flight_data['to_point'].longitude
-            )
+            for point in points:
+                self.globe_screen.simulation_view.add_point(
+                    point.latitude,
+                    point.longitude
+                )
             self.globe_screen.add_plane(plane)
             self.globe_screen.add_projectile(Projectile(Point(0.0, 0.0, None), plane, 0, 0, disabled=True))
 
             self.stack.setCurrentWidget(self.globe_screen)            
         else:
-            self.map_screen.simulation_view.add_point(
-                flight_data['from_point'].latitude, 
-                flight_data['from_point'].longitude
-            )
-            self.map_screen.simulation_view.add_point(
-                flight_data['to_point'].latitude, 
-                flight_data['to_point'].longitude
-            )
+            for point in points:
+                self.map_screen.simulation_view.add_point(
+                    point.latitude,
+                    point.longitude
+                )
             self.map_screen.add_plane(plane)
             self.stack.setCurrentWidget(self.map_screen)
 

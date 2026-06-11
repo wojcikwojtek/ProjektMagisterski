@@ -38,10 +38,10 @@ class MainApp(QtWidgets.QMainWindow):
                     "name": "Szczecin",
                     "point": Point(53.4285, 14.5528, datetime(2026, 3, 14, 8, 56, 0))
                 },
-                # {
-                #     "name": "Berlin",
-                #     "point": Point(52.3666652, 13.501997992, datetime(2026, 3, 14, 9, 9, 0))
-                # }
+                {
+                    "name": "Berlin",
+                    "point": Point(52.3666652, 13.501997992, datetime(2026, 3, 14, 9, 9, 0))
+                }
             ]
         },
         {

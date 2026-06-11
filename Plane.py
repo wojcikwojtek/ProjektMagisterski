@@ -59,28 +59,31 @@ class Plane:
 
         for i in range(len(self.points) - 1):
             X0 = np.array(convert_geodetic_to_ecef(self.points[i].latitude, self.points[i].longitude, 120))
-            v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+            # v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
             X1 = np.array(convert_geodetic_to_ecef(self.points[i + 1].latitude, self.points[i + 1].longitude, 120))
-            v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+            # v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
 
-            #NIE DZIAŁA
-            # if i == 0:
-            #     direction = X1 - X0     
-            # else: 
-            #     X_prev = np.array(convert_geodetic_to_ecef(self.points[i - 1].latitude, self.points[i - 1].longitude, 120))
-            #     direction = X0 - X_prev
+            if i == 0:
+                direction = X1 - X0
+                up_vec = X0 / np.linalg.norm(X0)
+            else: 
+                X_prev = np.array(convert_geodetic_to_ecef(self.points[i - 1].latitude, self.points[i - 1].longitude, 120))
+                direction = X0 - X_prev
+                up_vec = X_prev / np.linalg.norm(X_prev)
 
-            # direction_norm = np.linalg.norm(direction)
-            # v1 = direction / direction_norm
+            v1_local = direction - np.dot(direction, up_vec) * up_vec
+            v1 = v1_local / np.linalg.norm(v1_local)
 
-            # if i == len(self.points)-2:
-            #     direction = X1 - X0 
-            # else:
-            #     X_next = np.array(convert_geodetic_to_ecef(self.points[i + 2].latitude, self.points[i + 2].longitude, 120))
-            #     direction = X_next - X1
+            if i == len(self.points)-2:
+                direction = X1 - X0 
+                up_vec = X1 / np.linalg.norm(X1)
+            else:
+                X_next = np.array(convert_geodetic_to_ecef(self.points[i + 2].latitude, self.points[i + 2].longitude, 120))
+                direction = X_next - X1
+                up_vec = X_next / np.linalg.norm(X_next)
 
-            # direction_norm = np.linalg.norm(direction)
-            # v2 = direction / direction_norm
+            v2_local = direction - np.dot(direction, up_vec) * up_vec
+            v2 = v2_local / np.linalg.norm(v2_local)
 
             path = compute_path(X0, X1, v1, v2, self.velocities[i], self.nmax)
             line = np.linspace(path["P1"], path["P2"], 200)
@@ -182,29 +185,32 @@ class Plane:
         self.segment_times = []
         for i in range(len(self.points) - 1):
             X0 = np.array(convert_geodetic_to_ecef(self.points[i].latitude, self.points[i].longitude, 120))
-            v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+            # v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
             X1 = np.array(convert_geodetic_to_ecef(self.points[i + 1].latitude, self.points[i + 1].longitude, 120))
-            v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+            # v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
 
             #Poprawa tak zeby wyliczac kierunki naturanie, a nie zeby byly hard coded
-            # NIE DZIAŁA
-            # if i == 0:
-            #     direction = X1 - X0     
-            # else: 
-            #     X_prev = np.array(convert_geodetic_to_ecef(self.points[i - 1].latitude, self.points[i - 1].longitude, 120))
-            #     direction = X0 - X_prev
+            if i == 0:
+                direction = X1 - X0
+                up_vec = X0 / np.linalg.norm(X0)
+            else: 
+                X_prev = np.array(convert_geodetic_to_ecef(self.points[i - 1].latitude, self.points[i - 1].longitude, 120))
+                direction = X0 - X_prev
+                up_vec = X_prev / np.linalg.norm(X_prev)
 
-            # direction_norm = np.linalg.norm(direction)
-            # v1 = direction / direction_norm
+            v1_local = direction - np.dot(direction, up_vec) * up_vec
+            v1 = v1_local / np.linalg.norm(v1_local)
 
-            # if i == len(self.points)-2:
-            #     direction = X1 - X0 
-            # else:
-            #     X_next = np.array(convert_geodetic_to_ecef(self.points[i + 2].latitude, self.points[i + 2].longitude, 120))
-            #     direction = X_next - X1
+            if i == len(self.points)-2:
+                direction = X1 - X0 
+                up_vec = X1 / np.linalg.norm(X1)
+            else:
+                X_next = np.array(convert_geodetic_to_ecef(self.points[i + 2].latitude, self.points[i + 2].longitude, 120))
+                direction = X_next - X1
+                up_vec = X_next / np.linalg.norm(X_next)
 
-            # direction_norm = np.linalg.norm(direction)
-            # v2 = direction / direction_norm
+            v2_local = direction - np.dot(direction, up_vec) * up_vec
+            v2 = v2_local / np.linalg.norm(v2_local)
             t = (self.points[i + 1].time - self.points[i].time).total_seconds()
 
             def objective(v):

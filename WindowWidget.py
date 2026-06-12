@@ -87,7 +87,7 @@ class WindowWidget(QtWidgets.QWidget):
         else:
             self.clock = SimulationClock(self.starting_speed)
         self.plane = plane
-
+        self.last_timer_t = self.clock.now()
         self.simulation_view.on_plane_clicked.connect(self.on_plane_clicked)
 
     def add_projectile(self, projectile: Projectile):
@@ -107,9 +107,9 @@ class WindowWidget(QtWidgets.QWidget):
         t = self.clock.now()
 
         has_projectile = hasattr(self, "projectile") and self.projectile.disabled == False
-        if has_projectile:
-            if t > self.projectile.intercept_time:
-                return
+        # if has_projectile:
+        #     if t > self.projectile.intercept_time:
+        #         return
 
         if t > self.plane.T:
             return
@@ -123,12 +123,14 @@ class WindowWidget(QtWidgets.QWidget):
             self.simulation_view.plane_popup.set_text(text)
             self.simulation_view.update_plane_popup_position()
 
-        if has_projectile and t >= self.projectile.t1:
-            lat, lon = self.projectile.calculate_current_cords(t)
+        # if has_projectile and t >= self.projectile.t1:
+        if has_projectile:
+            lat, lon = self.projectile.calculate_current_cords(t, self.last_timer_t)
             self.simulation_view.update_projectile_pos(lat, lon)
             #Pomyslec czy check_collision jest w ogole potrzebne jak zatrzymuje sie kiedy osiagne intercept time
             # self.check_collison()
 
+        self.last_timer_t = t
         self.change_slider((t / self.plane.T) * 10000)
 
     def toggle_pause(self):
@@ -173,7 +175,7 @@ class WindowWidget(QtWidgets.QWidget):
             self.simulation_view.view.removeItem(self.simulation_view.projectile_item)
 
         t = self.clock.now()
-        velocity = 1.743 * self.plane.calculate_mean_velocity()
+        velocity = 1.743 * self.plane.get_current_velocity(t)
         self.add_projectile(Projectile(point, self.plane, t, velocity))
 
     def clicked_on_globe(self, event):

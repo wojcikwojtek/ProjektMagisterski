@@ -108,7 +108,7 @@ class Plane:
             np.cumsum(self.ds)
         ])
 
-    def get_plane_position(self, t):
+    def get_plane_position(self, t, ecef=False):
         # # f = np.clip(t / self.T, 0, 1)
         # f = t / self.T
 
@@ -159,9 +159,12 @@ class Plane:
                 + alpha * self.trajectory[idx]
             )
 
-        lat, lon, height = convert_ecef_to_geodetic(pos[0], pos[1], pos[2])
-        
-        return lat, lon
+        if ecef == True:
+            return pos
+        else:
+            lat, lon, height = convert_ecef_to_geodetic(pos[0], pos[1], pos[2])
+            
+            return lat, lon
     
     def calculate_mean_velocity(self):
         # if self.mean_velocity is None:
@@ -229,6 +232,17 @@ class Plane:
             self.velocities.append(sol.root)
             self.segment_times.append(t)
 
+    def get_current_velocity(self, t):
+        if t <= 0:
+            return self.velocities[0]
+
+        if t >= self.T:
+            return self.velocities[-1]
+
+        segment_idx = np.searchsorted(self.cum_times, t) - 1
+        segment_idx = max(0, min(segment_idx, len(self.velocities) - 1))
+
+        return self.velocities[segment_idx]
     
     def currentStats(self):
         return {

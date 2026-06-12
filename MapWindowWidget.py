@@ -145,6 +145,7 @@ class MapWindowWidget(QtWidgets.QWidget):
 
         self.timer.start(16)
         self.clock = SimulationClock(self.starting_speed)
+        self.last_timer_t = self.clock.now()
         self.plane = plane
 
     def add_projectile(self, projectile: Projectile):
@@ -167,7 +168,7 @@ class MapWindowWidget(QtWidgets.QWidget):
         self.change_time_label(t)
 
     def update_projectile_pos(self, t):
-        lat, lon = self.projectile.calculate_current_cords(t)
+        lat, lon = self.projectile.calculate_current_cords(t, self.last_timer_t)
         self.projectile_item.setData(x=[lon], y=[lat])
 
     def animate_plane(self):
@@ -179,20 +180,22 @@ class MapWindowWidget(QtWidgets.QWidget):
         t = self.clock.now()
 
         has_projectile = hasattr(self, "projectile")
-        if has_projectile:
-            if t > self.projectile.intercept_time:
-                return
+        # if has_projectile:
+        #     if t > self.projectile.intercept_time:
+        #         return
 
         if t > self.plane.T:
             return
         
         self.update_plane_pos(t)
 
-        if has_projectile and t >= self.projectile.t1:
+        # if has_projectile and t >= self.projectile.t1:
+        if has_projectile:
             self.update_projectile_pos(t)
             #Pomyslec czy check_collision jest w ogole potrzebne jak zatrzymuje sie kiedy osiagne intercept time
             self.check_collison()
 
+        self.last_timer_t = t
         self.change_slider((t / self.plane.T) * 10000)
 
     def check_collison(self):

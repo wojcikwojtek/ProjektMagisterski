@@ -140,10 +140,10 @@ class Plane:
         idx = np.searchsorted(self.cum_s, s)
 
         if idx == 0:
-            pos = self.trajectory[0]
+            self.pos_ecef = self.trajectory[0]
 
         elif idx >= len(self.trajectory):
-            pos = self.trajectory[-1]
+            self.pos_ecef = self.trajectory[-1]
 
         else:
             s0 = self.cum_s[idx - 1]
@@ -154,17 +154,17 @@ class Plane:
             else:
                 alpha = (s - s0) / (s1 - s0)
 
-            pos = (
+            self.pos_ecef = (
                 (1 - alpha) * self.trajectory[idx - 1]
                 + alpha * self.trajectory[idx]
             )
 
+        self.pos_geo = convert_ecef_to_geodetic(self.pos_ecef[0], self.pos_ecef[1], self.pos_ecef[2])
+
         if ecef == True:
-            return pos
+            return self.pos_ecef
         else:
-            lat, lon, height = convert_ecef_to_geodetic(pos[0], pos[1], pos[2])
-            
-            return lat, lon
+            return self.pos_geo[0], self.pos_geo[1]
     
     def calculate_mean_velocity(self):
         # if self.mean_velocity is None:

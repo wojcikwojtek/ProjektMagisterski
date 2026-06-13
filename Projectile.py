@@ -3,7 +3,7 @@ from Plane import Plane
 from Point import Point
 from scipy import optimize
 import time
-from DronePathTest import compute_path, convert_geodetic_to_ecef, convert_ecef_to_geodetic
+from DronePathTest import convert_geodetic_to_ecef, convert_ecef_to_geodetic
 
 class Projectile():
     R = 6371e3
@@ -14,8 +14,8 @@ class Projectile():
         self.intercepted_plane = intercepted_plane
         self.disabled = disabled
         self.velocity = velocity
-        self.projectile_pos_geo = [start_point.latitude, start_point.longitude, 120]
-        self.projectile_pos_ecef = convert_geodetic_to_ecef(start_point.latitude, start_point.longitude, 120)
+        self.pos_geo = [start_point.latitude, start_point.longitude, 120]
+        self.pos_ecef = convert_geodetic_to_ecef(start_point.latitude, start_point.longitude, 120)
 
         # if not disabled:
         #     self.calculate_intercept_angle(current_time, velocity)
@@ -23,25 +23,25 @@ class Projectile():
     def calculate_current_cords(self, t, previous_t, ecef = False):
         plane_pos = self.intercepted_plane.get_plane_position(t, ecef=True)
 
-        dist = np.linalg.norm(plane_pos - self.projectile_pos_ecef)
+        dist = np.linalg.norm(plane_pos - self.pos_ecef)
         if dist <= self.EPSILON:
             if ecef == True:
-                return self.projectile_pos_ecef
+                return self.pos_ecef
             else:
-                return self.projectile_pos_geo[0], self.projectile_pos_geo[1]
+                return self.pos_geo[0], self.pos_geo[1]
         
-        direction = plane_pos - self.projectile_pos_ecef
+        direction = plane_pos - self.pos_ecef
         direction /= np.linalg.norm(direction)
 
         dt = t - previous_t
-        self.projectile_pos_ecef += direction * (self.velocity * dt)
+        self.pos_ecef += direction * (self.velocity * dt)
 
-        self.projectile_pos_geo = convert_ecef_to_geodetic(self.projectile_pos_ecef[0], self.projectile_pos_ecef[1], self.projectile_pos_ecef[2])
+        self.pos_geo = convert_ecef_to_geodetic(self.pos_ecef[0], self.pos_ecef[1], self.pos_ecef[2])
 
         if ecef == True:
-            return self.projectile_pos_ecef
+            return self.pos_ecef
         else:
-            return self.projectile_pos_geo[0], self.projectile_pos_geo[1]
+            return self.pos_geo[0], self.pos_geo[1]
 
     # def latlon_to_vector(self, lat, lon):
     #     lat_rad = np.radians(lat)

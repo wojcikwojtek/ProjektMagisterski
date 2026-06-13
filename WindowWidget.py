@@ -6,6 +6,7 @@ from Point import Point
 from MapWidget import MapWidget
 from Globe3DWidget import Globe3DWidget
 from PySide6.Qt3DRender import Qt3DRender
+from DronePathTest import convert_geodetic_to_ecef
 
 class WindowWidget(QtWidgets.QWidget):
     go_back = QtCore.Signal()
@@ -124,14 +125,32 @@ class WindowWidget(QtWidgets.QWidget):
             self.simulation_view.update_plane_popup_position()
 
         # if has_projectile and t >= self.projectile.t1:
-        if has_projectile:
+        if has_projectile and self.projectile.disabled == False:
             lat, lon = self.projectile.calculate_current_cords(t, self.last_timer_t)
             self.simulation_view.update_projectile_pos(lat, lon)
             #Pomyslec czy check_collision jest w ogole potrzebne jak zatrzymuje sie kiedy osiagne intercept time
-            # self.check_collison()
+            self.check_collison()
 
         self.last_timer_t = t
         self.change_slider((t / self.plane.T) * 10000)
+
+    def check_collison(self):
+        if not (hasattr(self, "plane") or hasattr(self, "projectile")):
+            return
+        
+        tolerance = 0.005
+
+        lat_close = abs(self.plane.pos_geo[0] - self.projectile.pos_geo[0]) < tolerance
+        lon_close = abs(self.plane.pos_geo[1] - self.projectile.pos_geo[1]) < tolerance
+        
+        if lat_close and lon_close:
+            # self.timer.stop()
+            print("Kolizja")
+            t = self.clock.now()
+            print("Czas: ", t)
+            print(self.plane.pos_geo[0], self.plane.pos_geo[1])
+            print(self.projectile.pos_geo[0], self.projectile.pos_geo[1])
+            exit()
 
     def toggle_pause(self):
         if(self.clock.paused):
@@ -153,12 +172,13 @@ class WindowWidget(QtWidgets.QWidget):
     def slider_moved(self, value):
         t = (value * self.plane.T) / 10000
         if hasattr(self, "projectile") and self.projectile.disabled == False:
-            if t >= self.projectile.t1: 
-                lat, lon = self.projectile.calculate_current_cords(t)
-                self.simulation_view.update_projectile_pos(lat, lon)
-            if t >= self.projectile.intercept_time:
-                t = self.projectile.intercept_time
-                self.change_slider((t / self.plane.T) * 10000)
+            # if t >= self.projectile.t1: 
+            #     lat, lon = self.projectile.calculate_current_cords(t)
+            #     self.simulation_view.update_projectile_pos(lat, lon)
+            # if t >= self.projectile.intercept_time:
+            #     t = self.projectile.intercept_time
+            #     self.change_slider((t / self.plane.T) * 10000)
+            pass
 
         lat, lon = self.plane.get_plane_position(t)
         self.simulation_view.update_plane_pos(lat, lon)
@@ -196,11 +216,14 @@ class WindowWidget(QtWidgets.QWidget):
                 pass
 
             t = self.clock.now()
-            velocity = 1 * self.plane.calculate_mean_velocity()
+            velocity = 1.743 * self.plane.get_current_velocity(t)
             # self.add_projectile(Projectile(point, self.plane, t, velocity))
             self.projectile.disabled = False
             self.projectile.start_point = point
-            self.projectile.calculate_intercept_angle(t, velocity)
+            self.projectile.velocity = velocity
+            self.projectile.pos_geo = [point.latitude, point.longitude, 120]
+            self.projectile.pos_ecef = convert_geodetic_to_ecef(point.latitude, point.longitude, 120)
+            # self.projectile.calculate_intercept_angle(t, velocity)
             self.simulation_view.update_projectile_pos(lat, lon)
 
     def get_plane_stats(self):
@@ -221,6 +244,11 @@ class WindowWidget(QtWidgets.QWidget):
     def clear(self):
         self.timer.stop()
         self.simulation_view.clear()
+        self.spinbox.setValue(self.starting_speed)
+        
+        if(self.clock.paused):
+            self.toggle_pause()
+
         delattr(self, 'plane')
         delattr(self, 'clock')
 

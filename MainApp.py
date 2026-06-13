@@ -156,14 +156,11 @@ class MainApp(QtWidgets.QMainWindow):
             if hasattr(self.map_screen, "plane"):
                 self.map_screen.clock = clock
             else:
-                self.map_screen.simulation_view.add_point(
-                    plane.start_point.latitude,
-                    plane.start_point.longitude
-                )
-                self.map_screen.simulation_view.add_point(
-                    plane.end_point.latitude,
-                    plane.end_point.longitude
-                )
+                for point in plane.points:
+                    self.map_screen.simulation_view.add_point(
+                        point.latitude,
+                        point.longitude
+                    )
                 self.map_screen.add_plane(plane, clock)
             if projectile is not None and projectile.disabled == False:
                 if not hasattr(self.map_screen, "projectile"):
@@ -181,14 +178,11 @@ class MainApp(QtWidgets.QMainWindow):
             if hasattr(self.globe_screen, "plane"):
                 self.globe_screen.clock = clock
             else:
-                self.globe_screen.simulation_view.add_point(
-                    plane.start_point.latitude,
-                    plane.start_point.longitude
-                )
-                self.globe_screen.simulation_view.add_point(
-                    plane.end_point.latitude,
-                    plane.end_point.longitude
-                )
+                for point in plane.points:
+                    self.globe_screen.simulation_view.add_point(
+                        point.latitude,
+                        point.longitude
+                    )
                 self.globe_screen.add_plane(plane, clock)
                 self.globe_screen.add_projectile(Projectile(Point(0.0, 0.0, None), plane, 0, 0, disabled=True))
             if projectile is not None and projectile.disabled == False:

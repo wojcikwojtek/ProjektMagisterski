@@ -17,31 +17,87 @@ class Projectile():
         self.pos_geo = [start_point.latitude, start_point.longitude, 120]
         self.pos_ecef = convert_geodetic_to_ecef(start_point.latitude, start_point.longitude, 120)
 
+        self.launch_time = current_time
+        self.predictive_interceptive_point = self.calculate_predictive_interceptive_point(current_time)
+
         # if not disabled:
         #     self.calculate_intercept_angle(current_time, velocity)
 
     def calculate_current_cords(self, t, previous_t, ecef = False):
-        plane_pos = self.intercepted_plane.get_plane_position(t, ecef=True)
+        #psia krzywa
+        # plane_pos = self.intercepted_plane.get_plane_position(t, ecef=True)
 
-        dist = np.linalg.norm(plane_pos - self.pos_ecef)
-        if dist <= self.EPSILON:
-            if ecef == True:
-                return self.pos_ecef
-            else:
-                return self.pos_geo[0], self.pos_geo[1]
+        # dist = np.linalg.norm(plane_pos - self.pos_ecef)
+        # if dist <= self.EPSILON:
+        #     if ecef == True:
+        #         return self.pos_ecef
+        #     else:
+        #         return self.pos_geo[0], self.pos_geo[1]
         
-        direction = plane_pos - self.pos_ecef
+        # direction = plane_pos - self.pos_ecef
+        # direction /= np.linalg.norm(direction)
+
+        # dt = t - previous_t
+        # self.pos_ecef += direction * (self.velocity * dt)
+
+        # self.pos_geo = convert_ecef_to_geodetic(self.pos_ecef[0], self.pos_ecef[1], self.pos_ecef[2])
+
+        # if ecef == True:
+        #     return self.pos_ecef
+        # else:
+        #     return self.pos_geo[0], self.pos_geo[1]
+        projectile_start_point = convert_geodetic_to_ecef(self.start_point.latitude, self.start_point.longitude, 120)
+        if t < self.launch_time:
+            return self.start_point.latitude, self.start_point.longitude
+        
+        new_intercept = self.calculate_predictive_interceptive_point(t)
+
+        if np.linalg.norm(
+                new_intercept - self.predictive_interceptive_point
+            ) > 1000:
+            self.predictive_interceptive_point = new_intercept
+        
+        dt = t - previous_t
+
+        direction = self.predictive_interceptive_point - self.pos_ecef
         direction /= np.linalg.norm(direction)
 
-        dt = t - previous_t
-        self.pos_ecef += direction * (self.velocity * dt)
-
+        self.pos_ecef += direction * self.velocity * dt
         self.pos_geo = convert_ecef_to_geodetic(self.pos_ecef[0], self.pos_ecef[1], self.pos_ecef[2])
 
         if ecef == True:
             return self.pos_ecef
         else:
             return self.pos_geo[0], self.pos_geo[1]
+        
+    def calculate_predictive_interceptive_point(self, t):
+        #rozwiązujemy równanie
+        #(v_t^2 - v_i^2)t^2 + 2 * (s_t - s_i) * v_t * t + (s_t - s_i)^2 = 0
+
+        plane_start_point = self.intercepted_plane.get_plane_position(t, ecef=True)
+        plane_velocity_vector = self.get_velocity_vector(t)
+
+        projectile_start_point = np.array(self.pos_ecef)
+        R = plane_start_point - projectile_start_point
+
+        a = np.dot(plane_velocity_vector, plane_velocity_vector) - self.velocity**2
+        b = 2 * np.dot(R, plane_velocity_vector)
+        c = np.dot(R, R)
+
+        delta = b**2 - 4 * a * c
+        if delta < 0:
+            return None
+        
+        t1 = (-b + np.sqrt(delta)) / (2 * a) 
+        t2 = (-b - np.sqrt(delta)) / (2 * a)
+
+        times = [t for t in (t1, t2) if t > 0]
+        if not times:
+            return None 
+        
+        t_hit = min(times)
+
+        return plane_start_point + plane_velocity_vector * t_hit
 
     # def latlon_to_vector(self, lat, lon):
     #     lat_rad = np.radians(lat)
@@ -65,27 +121,19 @@ class Projectile():
 
     #     return u1
     
-    # def get_velocity_vector(self):
-    #     A = self.latlon_to_vector(self.intercepted_plane.start_point.latitude, self.intercepted_plane.start_point.longitude)
-    #     B = self.latlon_to_vector(self.intercepted_plane.end_point.latitude, self.intercepted_plane.end_point.longitude)
+    def get_velocity_vector(self, t):
+        t1 = t - 15
+        if t < 0:
+            t = 0
+        A = self.intercepted_plane.get_plane_position(t1, ecef=True)
+        B = self.intercepted_plane.get_plane_position(t, ecef=True)
 
-    #     # a_hat = A / np.linalg.norm(A)
-    #     # b_hat = B / np.linalg.norm(B)
+        A_unit = A / np.linalg.norm(A)
+        B_unit = B / np.linalg.norm(B)
 
-    #     # normal = np.cross(a_hat, b_hat)
-    #     # normal /= np.linalg.norm(normal)
-
-    #     # # v_hat = np.cross(normal, a_hat)
-    #     # v_hat = np.cross(a_hat, normal)
-    #     # v_hat /= np.linalg.norm(v_hat)
-
-    #     # return self.intercepted_plane.calculate_mean_velocity() * v_hat
-    #     A_unit = A / np.linalg.norm(A)
-    #     B_unit = B / np.linalg.norm(B)
-
-    #     w = B_unit - np.dot(A_unit, B_unit) * A_unit 
-    #     W = w / np.linalg.norm(w)
-    #     return self.intercepted_plane.calculate_mean_velocity() * W
+        w = B_unit - np.dot(A_unit, B_unit) * A_unit 
+        W = w / np.linalg.norm(w)
+        return self.intercepted_plane.get_current_velocity(t) * W
     
     # #Narazie dla a biore punkt poczatkowy potestowac co jak dam kropke w trakcie lotu i czy tego nie zmienic na aktualny punkt
     # def calculate_intercept_angle(self, current_time, velocity):

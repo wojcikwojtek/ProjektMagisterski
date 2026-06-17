@@ -8,67 +8,98 @@ from DronePathTest import convert_geodetic_to_ecef, convert_ecef_to_geodetic
 class Projectile():
     R = 6371e3
     EPSILON = 2.0
+    N = 3.0          # Efektywna stała nawigacyjna (musi być N > 2 dla zachowania stabilności)
 
-    def __init__(self, start_point: Point, intercepted_plane: Plane, current_time: float, velocity: float, disabled = False):
+    def __init__(self, start_point: Point, intercepted_plane: Plane, current_time: float, method, velocity: float, disabled = False):
         self.start_point = start_point
         self.intercepted_plane = intercepted_plane
         self.disabled = disabled
         self.velocity = velocity
         self.pos_geo = [start_point.latitude, start_point.longitude, 120]
         self.pos_ecef = convert_geodetic_to_ecef(start_point.latitude, start_point.longitude, 120)
+        self.method = method
+        print(self.method)
 
         self.launch_time = current_time
-        self.predictive_interceptive_point = self.calculate_predictive_interceptive_point(current_time)
+        if self.method == "PredictiveInterceptivePoint":
+            self.predictive_interceptive_point = self.calculate_predictive_interceptive_point(current_time)
+        elif self.method == "ProportionalNavigation":
+            self.v_M = self.get_starting_projectile_velocity_vector()
 
         # if not disabled:
         #     self.calculate_intercept_angle(current_time, velocity)
 
     def calculate_current_cords(self, t, previous_t, ecef = False):
-        #psia krzywa
-        # plane_pos = self.intercepted_plane.get_plane_position(t, ecef=True)
+        # psia krzywa
+        if self.method == "PursuitCurve":
+            plane_pos = self.intercepted_plane.get_plane_position(t, ecef=True)
 
-        # dist = np.linalg.norm(plane_pos - self.pos_ecef)
-        # if dist <= self.EPSILON:
-        #     if ecef == True:
-        #         return self.pos_ecef
-        #     else:
-        #         return self.pos_geo[0], self.pos_geo[1]
-        
-        # direction = plane_pos - self.pos_ecef
-        # direction /= np.linalg.norm(direction)
+            dist = np.linalg.norm(plane_pos - self.pos_ecef)
+            if dist <= self.EPSILON:
+                if ecef == True:
+                    return self.pos_ecef
+                else:
+                    return self.pos_geo[0], self.pos_geo[1]
+            
+            direction = plane_pos - self.pos_ecef
+            direction /= np.linalg.norm(direction)
 
-        # dt = t - previous_t
-        # self.pos_ecef += direction * (self.velocity * dt)
+            dt = t - previous_t
+            self.pos_ecef += direction * (self.velocity * dt)
 
-        # self.pos_geo = convert_ecef_to_geodetic(self.pos_ecef[0], self.pos_ecef[1], self.pos_ecef[2])
+        # predictive interceptive point
+        elif self.method == "PredictiveInterceptivePoint":
+            if t < self.launch_time:
+                return self.start_point.latitude, self.start_point.longitude
+            
+            new_intercept = self.calculate_predictive_interceptive_point(t)
 
-        # if ecef == True:
-        #     return self.pos_ecef
-        # else:
-        #     return self.pos_geo[0], self.pos_geo[1]
-        projectile_start_point = convert_geodetic_to_ecef(self.start_point.latitude, self.start_point.longitude, 120)
-        if t < self.launch_time:
-            return self.start_point.latitude, self.start_point.longitude
-        
-        new_intercept = self.calculate_predictive_interceptive_point(t)
+            if np.linalg.norm(
+                    new_intercept - self.predictive_interceptive_point
+                ) > 1000:
+                self.predictive_interceptive_point = new_intercept
+            
+            dt = t - previous_t
 
-        if np.linalg.norm(
-                new_intercept - self.predictive_interceptive_point
-            ) > 1000:
-            self.predictive_interceptive_point = new_intercept
-        
-        dt = t - previous_t
+            direction = self.predictive_interceptive_point - self.pos_ecef
+            direction /= np.linalg.norm(direction)
 
-        direction = self.predictive_interceptive_point - self.pos_ecef
-        direction /= np.linalg.norm(direction)
+            self.pos_ecef += direction * self.velocity * dt
 
-        self.pos_ecef += direction * self.velocity * dt
+        # Proportional Navigation
+        elif self.method == "ProportionalNavigation":
+            dt = t - previous_t
+            r_M = self.pos_ecef
+            r_T = self.intercepted_plane.get_plane_position(t, ecef=True)
+            v_T = self.get_velocity_vector(t)
+
+            r = r_T - r_M
+            R = np.linalg.norm(r)
+
+            r_1 = r / R 
+            v = v_T - self.v_M
+
+            R_dot = np.dot(v, r_1)
+            V_c = -R_dot
+
+            omega_LOS = np.cross(r, v) / (R**2)
+            n_dot = np.cross(omega_LOS, r_1)
+
+            a_M_command = self.N * V_c * n_dot
+            max_g = 25 * 9.81
+            a_M_magnitude = np.linalg.norm(a_M_command)
+            if a_M_magnitude > max_g:
+                a_M_command = (a_M_command / a_M_magnitude) * max_g
+
+            self.v_M += a_M_command * dt
+            self.pos_ecef += self.v_M * dt
+            
         self.pos_geo = convert_ecef_to_geodetic(self.pos_ecef[0], self.pos_ecef[1], self.pos_ecef[2])
-
         if ecef == True:
             return self.pos_ecef
         else:
             return self.pos_geo[0], self.pos_geo[1]
+
         
     def calculate_predictive_interceptive_point(self, t):
         #rozwiązujemy równanie
@@ -134,6 +165,17 @@ class Projectile():
         w = B_unit - np.dot(A_unit, B_unit) * A_unit 
         W = w / np.linalg.norm(w)
         return self.intercepted_plane.get_current_velocity(t) * W
+    
+    def get_starting_projectile_velocity_vector(self):
+        A = self.pos_ecef
+        B = convert_geodetic_to_ecef(self.start_point.latitude + 10, self.start_point.longitude + 10, 120)
+
+        A_unit = A / np.linalg.norm(A)
+        B_unit = B / np.linalg.norm(B)
+
+        w = B_unit - np.dot(A_unit, B_unit) * A_unit
+        W = w / np.linalg.norm(w)
+        return self.velocity * W
     
     # #Narazie dla a biore punkt poczatkowy potestowac co jak dam kropke w trakcie lotu i czy tego nie zmienic na aktualny punkt
     # def calculate_intercept_angle(self, current_time, velocity):

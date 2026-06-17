@@ -7,6 +7,7 @@ from MapWidget import MapWidget
 from Globe3DWidget import Globe3DWidget
 from PySide6.Qt3DRender import Qt3DRender
 from DronePathTest import convert_geodetic_to_ecef
+from ProjectileDialog import ProjectileDialog
 
 class WindowWidget(QtWidgets.QWidget):
     go_back = QtCore.Signal()
@@ -194,9 +195,11 @@ class WindowWidget(QtWidgets.QWidget):
             delattr(self, 'projectile')
             self.simulation_view.view.removeItem(self.simulation_view.projectile_item)
 
+        method, velocity = self.show_projectile_settings_dialog()
+
         t = self.clock.now()
-        velocity = 1.743 * self.plane.get_current_velocity(t)
-        self.add_projectile(Projectile(point, self.plane, t, velocity))
+        # velocity = 1.743 * self.plane.get_current_velocity(t)
+        self.add_projectile(Projectile(point, self.plane, t, method, velocity))
 
     def clicked_on_globe(self, event):
         if event.button() == Qt3DRender.QPickEvent.Buttons.LeftButton:
@@ -214,17 +217,33 @@ class WindowWidget(QtWidgets.QWidget):
                 # delattr(self.simulation_view, 'projectile_item')
                 # delattr(self.simulation_view, 'projectile_transform')
                 pass
-
+            
+            method, velocity = self.show_projectile_settings_dialog()
             t = self.clock.now()
-            velocity = 1.743 * self.plane.get_current_velocity(t)
+            # velocity = 1.743 * self.plane.get_current_velocity(t)
             # self.add_projectile(Projectile(point, self.plane, t, velocity))
             self.projectile.disabled = False
             self.projectile.start_point = point
             self.projectile.velocity = velocity
             self.projectile.pos_geo = [point.latitude, point.longitude, 120]
             self.projectile.pos_ecef = convert_geodetic_to_ecef(point.latitude, point.longitude, 120)
+            self.projectile.method = method
+            self.launch_time = t
+            if self.projectile.method == "PredictiveInterceptivePoint":
+                self.predictive_interceptive_point = self.projectile.calculate_predictive_interceptive_point(t)
+            elif self.projectile.method == "ProportionalNavigation":
+                self.v_M = self.projectile.get_starting_projectile_velocity_vector()
+
             # self.projectile.calculate_intercept_angle(t, velocity)
             self.simulation_view.update_projectile_pos(lat, lon)
+
+    def show_projectile_settings_dialog(self):
+        dialog = ProjectileDialog(self)
+
+        if dialog.exec():
+            option, value = dialog.get_values()
+
+            return option, value
 
     def get_plane_stats(self):
         stats = self.plane.currentStats()

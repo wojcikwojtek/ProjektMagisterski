@@ -184,7 +184,7 @@ class MainApp(QtWidgets.QMainWindow):
                         point.longitude
                     )
                 self.globe_screen.add_plane(plane, clock)
-                self.globe_screen.add_projectile(Projectile(Point(0.0, 0.0, None), plane, 0, 0, disabled=True))
+                self.globe_screen.add_projectile(Projectile(Point(0.0, 0.0, None), plane, 0, "", 0, disabled=True))
             if projectile is not None and projectile.disabled == False:
                 self.globe_screen.projectile = projectile
             if self.globe_screen.clock.paused:

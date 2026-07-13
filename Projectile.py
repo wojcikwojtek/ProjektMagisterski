@@ -26,10 +26,15 @@ class Projectile():
         elif self.method == "ProportionalNavigation":
             self.v_M = self.get_starting_projectile_velocity_vector()
 
+        self.distance = 0.0
+
         # if not disabled:
         #     self.calculate_intercept_angle(current_time, velocity)
 
+    #Rozbic na mniejsze funkcje
     def calculate_current_cords(self, t, previous_t, ecef = False):
+        previous_pos = np.array(self.pos_ecef)
+
         # psia krzywa
         if self.method == "PursuitCurve":
             plane_pos = self.intercepted_plane.get_plane_position(t, ecef=True)
@@ -76,11 +81,18 @@ class Projectile():
             r = r_T - r_M
             R = np.linalg.norm(r)
 
+            # if R < 1.0: 
+            #     return self.pos_ecef
+
             r_1 = r / R 
             v = v_T - self.v_M
 
             R_dot = np.dot(v, r_1)
             V_c = -R_dot
+
+            #Zabezpieczenie przed ujemnym V_c
+            #Pewnego rodzaju oszukanie algorytmu
+            V_c = max(V_c, 5.0)
 
             omega_LOS = np.cross(r, v) / (R**2)
             n_dot = np.cross(omega_LOS, r_1)
@@ -92,8 +104,17 @@ class Projectile():
                 a_M_command = (a_M_command / a_M_magnitude) * max_g
 
             self.v_M += a_M_command * dt
+            # Wymuszenie stałej prędkości drona (korekta kierunku, ale utrzymanie ciągu)
+            current_speed = np.linalg.norm(self.v_M)
+            if current_speed > 0:
+                self.v_M = (self.v_M / current_speed) * self.velocity
+
             self.pos_ecef += self.v_M * dt
             
+        #liczenie dystansu
+        step_distance = np.linalg.norm(self.pos_ecef - previous_pos)
+        self.distance += step_distance
+
         self.pos_geo = convert_ecef_to_geodetic(self.pos_ecef[0], self.pos_ecef[1], self.pos_ecef[2])
         if ecef == True:
             return self.pos_ecef
@@ -154,28 +175,46 @@ class Projectile():
     
     def get_velocity_vector(self, t):
         t1 = t - 15
-        if t < 0:
-            t = 0
+        if t1 < 0:
+            t1 = 0
         A = self.intercepted_plane.get_plane_position(t1, ecef=True)
         B = self.intercepted_plane.get_plane_position(t, ecef=True)
 
-        A_unit = A / np.linalg.norm(A)
-        B_unit = B / np.linalg.norm(B)
+        # A_unit = A / np.linalg.norm(A)
+        # B_unit = B / np.linalg.norm(B)
 
-        w = B_unit - np.dot(A_unit, B_unit) * A_unit 
-        W = w / np.linalg.norm(w)
-        return self.intercepted_plane.get_current_velocity(t) * W
+        # w = B_unit - np.dot(A_unit, B_unit) * A_unit 
+        # W = w / np.linalg.norm(w)
+        # return self.intercepted_plane.get_current_velocity(t) * W
+        dt = t - t1 
+
+        v = (B - A) / dt 
+        return self.intercepted_plane.get_current_velocity(t) * v / np.linalg.norm(v)
     
+    #Wystrzeliwyjemy pocisk w kierunku drona
     def get_starting_projectile_velocity_vector(self):
-        A = self.pos_ecef
-        B = convert_geodetic_to_ecef(self.start_point.latitude + 10, self.start_point.longitude + 10, 120)
+        # A = self.pos_ecef
+        # B = convert_geodetic_to_ecef(self.start_point.latitude + 10, self.start_point.longitude + 10, 120)
 
-        A_unit = A / np.linalg.norm(A)
-        B_unit = B / np.linalg.norm(B)
+        # A_unit = A / np.linalg.norm(A)
+        # B_unit = B / np.linalg.norm(B)
 
-        w = B_unit - np.dot(A_unit, B_unit) * A_unit
-        W = w / np.linalg.norm(w)
-        return self.velocity * W
+        # w = B_unit - np.dot(A_unit, B_unit) * A_unit
+        # W = w / np.linalg.norm(w)
+        # return self.velocity * W
+        target_pos_at_launch = self.intercepted_plane.get_plane_position(self.launch_time, ecef=True)
+
+        direction = target_pos_at_launch - self.pos_ecef
+        distance = np.linalg.norm(direction)
+
+        if distance < 1.0:
+            return np.array([0.0, 0.0, 0.0])
+        
+        direction_normalized = direction / distance
+
+        initial_velocity_vector = direction_normalized * self.velocity
+
+        return initial_velocity_vector
     
     # #Narazie dla a biore punkt poczatkowy potestowac co jak dam kropke w trakcie lotu i czy tego nie zmienic na aktualny punkt
     # def calculate_intercept_angle(self, current_time, velocity):

@@ -1,0 +1,195 @@
+Scenariusz Pościg 
+Punkt startowy samolotu Warszawa (52.159499362, 20.966996132)
+Punkt docelowy samolotu Nowy Jork (40.641766, -73.780968)
+
+PursuitCurve
+
+Punkt startowy pocisku 10 km na wschód 52.159499362, 21.113396132
+Prędkość pocisku 5% szybsza od samolotu
+Kolizja
+Czas:  1924.8509171009064
+Przebyty dystans:  444.630702166882
+53.843360496484976 15.87379211105013
+53.84187671562215 15.878785350451329
+Prędkość pocisku 10% szybsza od samolotu
+Kolizja
+Czas: 995.3587019443512 
+Przebyty dystans:  233.49286324028134
+53.04574280611816 18.41829952363423
+53.04411699575807 18.423222851105162
+Prędkość pocisku 20% szybsza od samolotu
+Kolizja
+Czas:  532.0420417785645
+Przebyty dystans:  128.25828678251585
+52.6384781139485 19.621852419869835
+52.63675884906721 19.62681126722332
+Prędkość pocisku 30% szybsza od samolotu
+Kolizja
+Czas:  376.5702793598175
+Przebyty dystans:  93.07239449310768
+52.500632473595694 20.016339785412903
+52.49927451296114 20.020195174636193
+
+Punkt startowy pocisku 25 km na wschód 52.159499362, 21.332996132
+Prędkość pocisku 5% szybsza od samolotu
+Kolizja
+Czas:  3052.5376360416412
+Przebyty dystans:  713.6602430194039
+54.76531141368779 12.543429168061278
+54.76408094549904 12.548214343394495
+Prędkość pocisku 10% szybsza od samolotu
+Kolizja
+Czas:  1567.1255431175232
+Przebyty dystans:  376.220124395109
+53.53982238969171 16.874051765074512
+53.53833005571171 16.878867599420527
+Prędkość pocisku 20% szybsza od samolotu
+Kolizja
+Czas:  810.6528606414795
+Przebyty dystans:  204.5518652340458
+52.88403780281672 18.903214046923228
+52.882633573466904 18.907383460796048
+Prędkość pocisku 30% szybsza od samolotu
+Kolizja
+Czas:  561.110066652298
+Przebyty dystans:  147.89486485029303
+52.66414884245488 19.54769298098685
+52.662471737371554 19.5525446874312
+
+Punkt startowy pocisku 50 km na wschód 52.159499362, 21.698996132
+Prędkość pocisku 5% szybsza od samolotu
+Kolizja
+Czas:  4971.666193008423
+Przebyty dystans:  1171.243946109415
+56.16869997213685 6.238791746758137
+56.16779962665091 6.243537294970016
+Prędkość pocisku 10% szybsza od samolotu
+Kolizja
+Czas:  2508.083720445633
+Przebyty dystans:  611.6966530937062
+54.32749022781124 14.185098889560491
+54.32612274269489 14.190045745080392
+Prędkość pocisku 20% szybsza od samolotu
+Kolizja
+Czas:  1296.6023969650269
+Przebyty dystans:  336.71043600715944
+53.30737062788014 17.612826667549708
+53.30593081678122 17.617333082297378
+Prędkość pocisku 30% szybsza od samolotu
+Kolizja
+Czas:  884.1904513835907
+Przebyty dystans:  243.33745960271287
+52.948570690192184 18.7108394918563
+52.94730474104843 18.714627805351128
+
+PredictiveInterceptivePoint
+
+Punkt startowy pocisku 10 km na wschód 52.159499362, 21.113396132
+Prędkość pocisku 5% szybsza od samolotu
+Kolizja
+Czas:  4004.6954725265505
+Przebyty dystans:  951.9278705410344
+55.49208714979503 9.516714451920523
+55.49115149401218 9.52084267986726
+Prędkość pocisku 10% szybsza od samolotu
+Kolizja
+Czas:  1426.8134715557098
+Przebyty dystans:  341.4351060188084
+53.419586568872106 17.25900329398609
+53.41919095535865 17.260175642910735
+Prędkość pocisku 20% szybsza od samolotu
+Kolizja
+Czas:  676.1169204711914
+Przebyty dystans:  167.49181984860144
+52.765704149518875 19.252123408701802
+52.76489417549781 19.25444491181777
+Prędkość pocisku 30% szybsza od samolotu
+Kolizja
+Czas:  443.1051518917084
+Przebyty dystans:  112.93329151854151
+52.55964158631386 19.848230220450258
+52.561293530109936 19.843506069129404
+
+Punkt startowy pocisku 25 km na wschód 52.159499362, 21.332996132
+Prędkość pocisku 5% szybsza od samolotu
+Kolizja
+Czas:  4992.9748520851135
+Przebyty dystans:  1176.6135284529464
+56.18280924442836 6.16426945252805
+56.18193116730469 6.168831816905985
+Prędkość pocisku 10% szybsza od samolotu
+Kolizja
+Czas:  2206.3659806251526
+Przebyty dystans:  536.1511218842087
+54.07884489672498 15.06762838055743
+54.078222490704555 15.069741493516796
+Prędkość pocisku 20% szybsza od samolotu
+Kolizja
+Czas:  1013.3525695800781
+Przebyty dystans:  259.5042238453691
+53.06145211553615 18.37067714737938
+53.06308222294299 18.365707379665615
+Prędkość pocisku 30% szybsza od samolotu
+Kolizja
+Czas:  659.0490882396698
+Przebyty dystans:  176.6980448973603
+52.75067504212625 19.29608713478119
+52.74985344903827 19.29842582999887
+
+Punkt startowy pocisku 50 km na wschód 52.159499362, 21.698996132
+Prędkość pocisku 5% szybsza od samolotu
+Kolizja
+Czas:  8010.323247432709
+Przebyty dystans:  1895.969884239439
+57.742036042622 -5.337908516440996
+57.741625435776875 -5.333306354627383
+Prędkość pocisku 10% szybsza od samolotu
+Kolizja
+Czas:  3481.303844690323
+Przebyty dystans:  854.5508518507517
+55.099212713982155 11.205134830544237
+55.098484707168126 11.208046852107115
+Prędkość pocisku 20% szybsza od samolotu
+Kolizja
+Czas:  1572.6943943500519
+Przebyty dystans:  412.158759139501
+53.54460488156803 16.85861192526451
+53.54408120007777 16.86022052658144
+Prędkość pocisku 30% szybsza od samolotu
+Kolizja
+Czas:  1017.6028742790222
+Przebyty dystans:  282.5760843399174
+53.06512382033712 18.359533119207477
+53.06427677234998 18.36204834456714
+
+ProportionalNavigation
+
+Punkt startowy pocisku 10 km na wschód 52.159499362, 21.113396132
+Prędkość pocisku 5% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 10% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 20% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 30% szybsza od samolotu
+Nie dogonił
+
+Punkt startowy pocisku 25 km na wschód 52.159499362, 21.332996132
+Prędkość pocisku 5% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 10% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 20% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 30% szybsza od samolotu
+Nie dogonił
+
+Punkt startowy pocisku 50 km na wschód 52.159499362, 21.698996132
+Prędkość pocisku 5% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 10% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 20% szybsza od samolotu
+Nie dogonił
+Prędkość pocisku 30% szybsza od samolotu
+Nie dogonił

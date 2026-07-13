@@ -116,6 +116,18 @@ class WindowWidget(QtWidgets.QWidget):
         if t > self.plane.T:
             return
         
+        #Na potrzeby badan po okreslonym czasie dodajemy pocisk
+        if t >= 60 and not has_projectile:
+        #     #10 kilometrow na wschod
+            projectile_start_point = Point(52.159499362, 21.113396132, None)
+        #     #25 kilometrow na wschod
+            # projectile_start_point = Point(52.159499362, 21.332996132, None)
+        #     #50 kilometrow na wschod
+        #     projectile_start_point = Point(52.159499362, 21.698996132, None)
+        #     #pocisk 10% szybszy
+            projectile_velocity = self.plane.get_current_velocity(t) * 1.3
+            self.add_projectile(Projectile(projectile_start_point, self.plane, t, 'ProportionalNavigation', projectile_velocity))
+        
         lat, lon = self.plane.get_plane_position(t)
         self.simulation_view.update_plane_pos(lat, lon)
         self.change_time_label(t)
@@ -149,6 +161,7 @@ class WindowWidget(QtWidgets.QWidget):
             print("Kolizja")
             t = self.clock.now()
             print("Czas: ", t)
+            print("Przebyty dystans: ", self.projectile.distance / 1000.0)
             print(self.plane.pos_geo[0], self.plane.pos_geo[1])
             print(self.projectile.pos_geo[0], self.projectile.pos_geo[1])
             exit()

@@ -119,12 +119,16 @@ class WindowWidget(QtWidgets.QWidget):
         #Na potrzeby badan po okreslonym czasie dodajemy pocisk
         if t >= 60 and not has_projectile:
         #     #10 kilometrow na wschod
-            projectile_start_point = Point(52.159499362, 21.113396132, None)
+            # projectile_start_point = Point(52.159499362, 21.113396132, None)
         #     #25 kilometrow na wschod
             # projectile_start_point = Point(52.159499362, 21.332996132, None)
         #     #50 kilometrow na wschod
-        #     projectile_start_point = Point(52.159499362, 21.698996132, None)
+            # projectile_start_point = Point(52.159499362, 21.698996132, None)
         #     #pocisk 10% szybszy
+        # ------ KURS KOLIZYJNY -------
+            # projectile_start_point = Point(52.350000, 20.650000, None)
+            # projectile_start_point = Point(53.000000, 19.350000, None)
+            projectile_start_point = Point(53.700000, 17.200000, None)
             projectile_velocity = self.plane.get_current_velocity(t) * 1.3
             self.add_projectile(Projectile(projectile_start_point, self.plane, t, 'ProportionalNavigation', projectile_velocity))
         

@@ -117,7 +117,7 @@ class WindowWidget(QtWidgets.QWidget):
             return
         
         #Na potrzeby badan po okreslonym czasie dodajemy pocisk
-        if t >= 60 and not has_projectile:
+        # if t >= 60 and not has_projectile:
         #     #10 kilometrow na wschod
             # projectile_start_point = Point(52.159499362, 21.113396132, None)
         #     #25 kilometrow na wschod
@@ -128,7 +128,21 @@ class WindowWidget(QtWidgets.QWidget):
         # ------ KURS KOLIZYJNY -------
             # projectile_start_point = Point(52.350000, 20.650000, None)
             # projectile_start_point = Point(53.000000, 19.350000, None)
-            projectile_start_point = Point(53.700000, 17.200000, None)
+            # projectile_start_point = Point(53.700000, 17.200000, None)
+        # ------ PARABOLA -------------
+        # if t >= 8 * 60 and not has_projectile:
+        #     projectile_start_point = Point(52.120000000, 21.050000000, None)
+        # if t >= 18 * 60 and not has_projectile:
+        #     projectile_start_point = Point(52.330000000, 21.190000000, None)
+        # if t >= 30 * 60 and not has_projectile:
+        #     projectile_start_point = Point(52.210000000, 21.470000000, None)
+        # ------ SINUSOIDA ------------
+        # if t >= 4 * 60 and not has_projectile:
+        #     projectile_start_point = Point(52.255000000, 21.080000000, None)
+        # if t >= 18 * 60 and not has_projectile:
+        #     projectile_start_point = Point(52.020000000, 21.300000000, None)
+        if t >= 34.5 * 60 and not has_projectile:
+            projectile_start_point = Point(52.300000000, 21.620000000, None)
             projectile_velocity = self.plane.get_current_velocity(t) * 1.3
             self.add_projectile(Projectile(projectile_start_point, self.plane, t, 'ProportionalNavigation', projectile_velocity))
         

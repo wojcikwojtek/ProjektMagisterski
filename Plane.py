@@ -1,5 +1,5 @@
 from Point import Point
-from scipy.optimize import root_scalar
+from scipy.optimize import root_scalar, minimize_scalar
 import numpy as np
 from DronePathTest import compute_path, convert_geodetic_to_ecef, convert_ecef_to_geodetic
 
@@ -223,13 +223,21 @@ class Plane:
             
             #Wymyślić coś w przypadku jeżeli dana trasa akurat nie ma rozwiązania dla tego układu
             
-            sol = root_scalar(
-                objective,
-                bracket=[10, 400],
-                method="brentq"
-            )
+            try:
+                sol = root_scalar(
+                    objective,
+                    bracket=[10, 400],
+                    method="brentq"
+                )
+                final_velocity = sol.root
+            except ValueError:
+                def objective_min(v):
+                    return (objective(v))**2
+                
+                res = minimize_scalar(objective_min, bounds=(1.0, 1000.0), method='bounded')
+                final_velocity = res.x
 
-            self.velocities.append(sol.root)
+            self.velocities.append(final_velocity)
             self.segment_times.append(t)
 
     def get_current_velocity(self, t):

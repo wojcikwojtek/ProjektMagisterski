@@ -59,7 +59,7 @@ class Projectile():
             
             new_intercept = self.calculate_predictive_interceptive_point(t)
 
-            if np.linalg.norm(
+            if new_intercept is not None and np.linalg.norm(
                     new_intercept - self.predictive_interceptive_point
                 ) > 1000:
                 self.predictive_interceptive_point = new_intercept

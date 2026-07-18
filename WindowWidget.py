@@ -141,10 +141,10 @@ class WindowWidget(QtWidgets.QWidget):
         #     projectile_start_point = Point(52.255000000, 21.080000000, None)
         # if t >= 18 * 60 and not has_projectile:
         #     projectile_start_point = Point(52.020000000, 21.300000000, None)
-        if t >= 34.5 * 60 and not has_projectile:
-            projectile_start_point = Point(52.300000000, 21.620000000, None)
-            projectile_velocity = self.plane.get_current_velocity(t) * 1.3
-            self.add_projectile(Projectile(projectile_start_point, self.plane, t, 'ProportionalNavigation', projectile_velocity))
+        # if t >= 34.5 * 60 and not has_projectile:
+        #     projectile_start_point = Point(52.300000000, 21.620000000, None)
+        #     projectile_velocity = self.plane.get_current_velocity(t) * 1.3
+        #     self.add_projectile(Projectile(projectile_start_point, self.plane, t, 'ProportionalNavigation', projectile_velocity))
         
         lat, lon = self.plane.get_plane_position(t)
         self.simulation_view.update_plane_pos(lat, lon)

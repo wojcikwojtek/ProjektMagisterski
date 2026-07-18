@@ -7,126 +7,13 @@ from Plane import Plane
 from Globe3DWidget import Globe3DWidget
 from MapWidget import MapWidget
 from Projectile import Projectile
+from DbConnector import DbConnector
 
 class MainApp(QtWidgets.QMainWindow):
-    flights_data = [
-        {
-            "id": 1, 
-            "waypoints": [
-                {
-                    "name": "Warszawa", 
-                    "point": Point(52.159499362, 20.966996132, datetime(2026, 3, 14, 8, 0, 0))
-                },
-                {
-                    "name": "Nowy Jork",
-                    "point": Point(40.641766, -73.780968, datetime(2026, 3, 14, 16, 0, 0))
-                }
-            ]
-        },
-        {
-            "id": 2, 
-            "waypoints": [
-                {
-                    "name": "Warszawa", 
-                    "point": Point(52.159499362, 20.966996132, datetime(2026, 3, 14, 8, 0, 0))
-                },
-                {
-                    "name": "Gdańsk",
-                    "point": Point(54.3775, 18.466111, datetime(2026, 3, 14, 8, 28, 0)) 
-                },
-                {
-                    "name": "Szczecin",
-                    "point": Point(53.4285, 14.5528, datetime(2026, 3, 14, 8, 56, 0))
-                },
-                {
-                    "name": "Berlin",
-                    "point": Point(52.3666652, 13.501997992, datetime(2026, 3, 14, 9, 9, 0))
-                }
-            ]
-        },
-        {
-            "id": 3, 
-            "waypoints": [
-                {
-                    "name": "Tokio", 
-                    "point": Point(35.549083, 139.784597, datetime(2026, 3, 22, 10, 0, 0))
-                },
-                {
-                    "name": "Sydney",
-                    "point": Point(-33.947346, 151.177222, datetime(2026, 3, 22, 19, 45, 0))
-                }
-            ]
-        },
-        {
-            "id": 4, 
-            "waypoints": [
-                {
-                    "name": "point1", 
-                    "point": Point(52.159499362, 20.966996132, datetime(2026, 3, 14, 8, 0, 0))
-                },
-                {
-                    "name": "point2",
-                    "point": Point(52.255000000, 21.045000000, datetime(2026, 3, 14, 8, 11, 15))
-                },
-                {
-                    "name": "point3",
-                    "point": Point(52.294000000, 21.190000000, datetime(2026, 3, 14, 8, 22, 30))
-                },
-                {
-                    "name": "point4",
-                    "point": Point(52.255000000, 21.335000000, datetime(2026, 3, 14, 8, 33, 45))
-                },
-                {
-                    "name": "point5",
-                    "point": Point(52.159499362, 21.413000000, datetime(2026, 3, 14, 8, 45,  0))
-                }
-            ]
-        },
-        {
-            "id": 5, 
-            "waypoints": [
-                {
-                    "name": "point1", 
-                    "point": Point(52.159499362, 20.966996132, datetime(2026, 3, 14, 8, 0, 0))
-                },
-                {
-                    "name": "point2",
-                    "point": Point(52.205000000, 21.080000000, datetime(2026, 3, 14, 8,  7, 30))
-                },
-                {
-                    "name": "point3",
-                    "point": Point(52.159499362, 21.190000000, datetime(2026, 3, 14, 8, 15,  0))
-                },
-                {
-                    "name": "point4",
-                    "point": Point(52.115000000, 21.300000000, datetime(2026, 3, 14, 8, 22, 30))
-                },
-                {
-                    "name": "point5",
-                    "point": Point(52.159499362, 21.410000000, datetime(2026, 3, 14, 8, 30,  0))
-                },
-                {
-                    "name": "point6", 
-                    "point": Point(52.205000000, 21.520000000, datetime(2026, 3, 14, 8, 37, 30))
-                },
-                {
-                    "name": "point7",
-                    "point": Point(52.159499362, 21.630000000, datetime(2026, 3, 14, 8, 45,  0))
-                },
-                {
-                    "name": "point8",
-                    "point": Point(52.115000000, 21.740000000, datetime(2026, 3, 14, 8, 52, 30))
-                },
-                {
-                    "name": "point9",
-                    "point": Point(52.159499362, 21.850000000, datetime(2026, 3, 14, 9,  0,  0))
-                }
-            ]
-        }
-    ]
 
     def __init__(self):
         super().__init__()
+        self.dbConnector = DbConnector()
 
         self.setWindowTitle("App")
         self.resize(1000, 700)
@@ -162,13 +49,14 @@ class MainApp(QtWidgets.QMainWindow):
         # button.clicked.connect(self.visualize_flight)
 
         self.flight_list = QtWidgets.QListWidget()
-        for flight in self.flights_data:
-            flight_label = f"{flight['id']}:"
-            for i in range(len(flight["waypoints"])):
-                waypoint = flight['waypoints'][i]
-                flight_label += f" {waypoint['name']}"
-                if i != len(flight["waypoints"]) - 1:
-                    flight_label += " ->"
+        flights_data = self.dbConnector.getFlights()
+        for flight in flights_data:
+            flight_label = f"{flight[0]}: {flight[1]} -> {flight[2]}"
+            # for i in range(len(flight["waypoints"])):
+            #     waypoint = flight['waypoints'][i]
+            #     flight_label += f" {waypoint['name']}"
+            #     if i != len(flight["waypoints"]) - 1:
+            #         flight_label += " ->"
             item = QtWidgets.QListWidgetItem(flight_label)
             item.setData(QtCore.Qt.UserRole, flight)
             self.flight_list.addItem(item)
@@ -195,7 +83,9 @@ class MainApp(QtWidgets.QMainWindow):
     
     def visualize_flight(self, item):
         flight_data = item.data(QtCore.Qt.UserRole)
-        points = [wp["point"] for wp in flight_data["waypoints"]]
+        flightId = flight_data[0]
+        points_data = self.dbConnector.getPoints(flightId)
+        points = [Point(wp[2], wp[3], wp[4]) for wp in points_data]
 
         plane = Plane(points)
         if self.use_3d:

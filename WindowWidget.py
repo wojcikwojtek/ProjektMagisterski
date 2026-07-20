@@ -156,7 +156,7 @@ class WindowWidget(QtWidgets.QWidget):
             self.simulation_view.update_plane_popup_position()
 
         # if has_projectile and t >= self.projectile.t1:
-        if has_projectile and self.projectile.disabled == False:
+        if has_projectile and self.projectile.disabled == False and t >= self.projectile.launch_time:
             lat, lon = self.projectile.calculate_current_cords(t, self.last_timer_t)
             self.simulation_view.update_projectile_pos(lat, lon)
             #Pomyslec czy check_collision jest w ogole potrzebne jak zatrzymuje sie kiedy osiagne intercept time
@@ -204,9 +204,14 @@ class WindowWidget(QtWidgets.QWidget):
     def slider_moved(self, value):
         t = (value * self.plane.T) / 10000
         if hasattr(self, "projectile") and self.projectile.disabled == False:
-            # if t >= self.projectile.t1: 
-            #     lat, lon = self.projectile.calculate_current_cords(t)
-            #     self.simulation_view.update_projectile_pos(lat, lon)
+            if t >= self.projectile.launch_time: 
+                lat, lon = self.projectile.calculate_current_cords(t, t-1)
+                self.simulation_view.update_projectile_pos(lat, lon)
+            else:
+                self.simulation_view.update_projectile_pos(
+                    self.projectile.start_point.latitude,
+                    self.projectile.start_point.longitude
+                )
             # if t >= self.projectile.intercept_time:
             #     t = self.projectile.intercept_time
             #     self.change_slider((t / self.plane.T) * 10000)
@@ -221,26 +226,42 @@ class WindowWidget(QtWidgets.QWidget):
         self.slider.setValue(value)
 
     def clicked_on_map(self, lon, lat):
-        point = Point(lat, lon, None)
+        paused_before_clicked = True
+        if self.clock.paused == False:
+            paused_before_clicked = False
+            self.toggle_pause()
+
         if hasattr(self, 'projectile'):
             delattr(self, 'projectile')
             self.simulation_view.view.removeItem(self.simulation_view.projectile_item)
 
-        method, velocity = self.show_projectile_settings_dialog()
+        method, velocity, lat, lon, t = self.show_projectile_settings_dialog(lat, lon)
+        if method is None:
+            if paused_before_clicked == False:
+                self.toggle_pause()
+            return
+        
+        point = Point(lat, lon, None)
 
-        t = self.clock.now()
         # velocity = 1.743 * self.plane.get_current_velocity(t)
         self.add_projectile(Projectile(point, self.plane, t, method, velocity))
 
+        if paused_before_clicked == False:
+            self.toggle_pause()
+
     def clicked_on_globe(self, event):
         if event.button() == Qt3DRender.QPickEvent.Buttons.LeftButton:
+            paused_before_clicked = True
+            if self.clock.paused == False:
+                paused_before_clicked = False
+                self.toggle_pause()
+
             world_pos = event.worldIntersection()
             rotation = self.simulation_view.globe_transform.rotation()
             inv_rotation = rotation.conjugated()
             local_pos = inv_rotation.rotatedVector(world_pos)
 
             lat, lon = self.simulation_view.xyz_to_latlon(local_pos)
-            point = Point(lat, lon, None)
             if hasattr(self, 'projectile'):
                 # delattr(self, 'projectile')
                 # self.simulation_view.projectile_item.setParent(None)
@@ -249,8 +270,13 @@ class WindowWidget(QtWidgets.QWidget):
                 # delattr(self.simulation_view, 'projectile_transform')
                 pass
             
-            method, velocity = self.show_projectile_settings_dialog()
-            t = self.clock.now()
+            method, velocity, lat, lon, t = self.show_projectile_settings_dialog(lat, lon)
+            if method is None:
+                if paused_before_clicked == False:
+                    self.toggle_pause()
+                return
+            
+            point = Point(lat, lon, None)
             # velocity = 1.743 * self.plane.get_current_velocity(t)
             # self.add_projectile(Projectile(point, self.plane, t, velocity))
             self.projectile.disabled = False
@@ -268,13 +294,26 @@ class WindowWidget(QtWidgets.QWidget):
             # self.projectile.calculate_intercept_angle(t, velocity)
             self.simulation_view.update_projectile_pos(lat, lon)
 
-    def show_projectile_settings_dialog(self):
-        dialog = ProjectileDialog(self)
+            if paused_before_clicked == False:
+                self.toggle_pause()
+
+    def show_projectile_settings_dialog(self, lat, lon):
+        t = self.clock.now()
+
+        dialog = ProjectileDialog(
+            lat=lat, 
+            lon=lon, 
+            time=t,
+            plane_velocity=self.plane.get_current_velocity(t),
+            parent=self
+        )
 
         if dialog.exec():
-            option, value = dialog.get_values()
+            option, value, lat, lon, time = dialog.get_values()
 
-            return option, value
+            return option, value, lat, lon, time
+        else:
+            return None, 0, 0, 0, 0
 
     def get_plane_stats(self):
         stats = self.plane.currentStats()

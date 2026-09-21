@@ -144,12 +144,12 @@ class WindowWidget(QtWidgets.QWidget):
         # if t >= 34.5 * 60 and not has_projectile:
         #     projectile_start_point = Point(52.300000000, 21.620000000, None)
         # ------ RAKIETA ------------
-        if t >= 60 and not has_projectile:
-            # projectile_start_point = Point(53.416665, 14.583331, None)
-            # projectile_start_point = Point(50.25841, 19.02754, None)
-            projectile_start_point = Point(50.04132, 21.99901, None)
-            projectile_velocity = 2000
-            self.add_projectile(Projectile(projectile_start_point, self.plane, t, 'ProportionalNavigation', projectile_velocity))
+        # if t >= 60 and not has_projectile:
+        #     # projectile_start_point = Point(53.416665, 14.583331, None)
+        #     # projectile_start_point = Point(50.25841, 19.02754, None)
+        #     projectile_start_point = Point(50.04132, 21.99901, None)
+        #     projectile_velocity = 2000
+        #     self.add_projectile(Projectile(projectile_start_point, self.plane, t, 'ProportionalNavigation', projectile_velocity))
         
         lat, lon = self.plane.get_plane_position(t)
         self.simulation_view.update_plane_pos(lat, lon)

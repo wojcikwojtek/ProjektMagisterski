@@ -32,7 +32,7 @@ class ProjectileDialog(QtWidgets.QDialog):
         self.time_edit.setText(f"{time}")
         layout.addWidget(self.time_edit)
 
-        self.pursuitCurve = QtWidgets.QRadioButton("Psia Krzywa")
+        self.pursuitCurve = QtWidgets.QRadioButton("Pure Pursuit")
         self.pip = QtWidgets.QRadioButton("Predictive Interceptive Point")
         self.proportionalNavigation = QtWidgets.QRadioButton("Proportional Navigation")
 

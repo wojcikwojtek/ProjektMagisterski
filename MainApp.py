@@ -39,34 +39,157 @@ class MainApp(QtWidgets.QMainWindow):
 
     def create_start_screen(self):
         widget = QtWidgets.QWidget()
-        layout = QtWidgets.QVBoxLayout(widget)
+        widget.setObjectName("startScreen")
 
-        title = QtWidgets.QLabel("Wybierz lot do wizualizacji")
+        main_layout = QtWidgets.QVBoxLayout(widget)
+        main_layout.setContentsMargins(60, 40, 60, 40)
+        main_layout.setSpacing(25)
+
+        # =========================================================
+        # HEADER
+        # =========================================================
+
+        header_layout = QtWidgets.QVBoxLayout()
+        header_layout.setSpacing(8)
+
+        title = QtWidgets.QLabel("Wizualizacja lotów")
+        title.setObjectName("title")
         title.setAlignment(QtCore.Qt.AlignCenter)
-        title.setStyleSheet("font-size: 32px;")
 
-        # button = QtWidgets.QPushButton("Start")
-        # button.clicked.connect(self.visualize_flight)
+        subtitle = QtWidgets.QLabel(
+            "Wybierz lot, aby rozpocząć symulację i analizę jego przebiegu"
+        )
+        subtitle.setObjectName("subtitle")
+        subtitle.setAlignment(QtCore.Qt.AlignCenter)
+
+        header_layout.addWidget(title)
+        header_layout.addWidget(subtitle)
+
+        main_layout.addLayout(header_layout)
+
+        # =========================================================
+        # FLIGHT CARD
+        # =========================================================
+
+        card = QtWidgets.QFrame()
+        card.setObjectName("flightCard")
+
+        card_layout = QtWidgets.QVBoxLayout(card)
+        card_layout.setContentsMargins(25, 25, 25, 25)
+        card_layout.setSpacing(15)
+
+        list_header = QtWidgets.QLabel("Dostępne loty")
+        list_header.setObjectName("listHeader")
 
         self.flight_list = QtWidgets.QListWidget()
+        self.flight_list.setObjectName("flightList")
+
+        self.flight_list.setSelectionMode(
+            QtWidgets.QAbstractItemView.SingleSelection
+        )
+
+        self.flight_list.setVerticalScrollMode(
+            QtWidgets.QAbstractItemView.ScrollPerPixel
+        )
+
+        self.flight_list.setSpacing(8)
+
         flights_data = self.dbConnector.getFlights()
+
         for flight in flights_data:
-            flight_label = f"{flight[0]}: {flight[1]} -> {flight[2]}"
-            # for i in range(len(flight["waypoints"])):
-            #     waypoint = flight['waypoints'][i]
-            #     flight_label += f" {waypoint['name']}"
-            #     if i != len(flight["waypoints"]) - 1:
-            #         flight_label += " ->"
+            flight_label = f"{flight[0]}    {flight[1]}  →  {flight[2]}"
+
             item = QtWidgets.QListWidgetItem(flight_label)
             item.setData(QtCore.Qt.UserRole, flight)
+
             self.flight_list.addItem(item)
 
         self.flight_list.itemClicked.connect(self.visualize_flight)
 
-        layout.addStretch()
-        layout.addWidget(title)
-        layout.addWidget(self.flight_list)
-        layout.addStretch()
+        card_layout.addWidget(list_header)
+        card_layout.addWidget(self.flight_list)
+
+        main_layout.addWidget(card, stretch=1)
+
+        # =========================================================
+        # FOOTER
+        # =========================================================
+
+        info = QtWidgets.QLabel(
+            "Wybierz lot z listy, aby przejść do wizualizacji."
+        )
+        info.setObjectName("info")
+        info.setAlignment(QtCore.Qt.AlignCenter)
+
+        main_layout.addWidget(info)
+
+        # =========================================================
+        # STYLE
+        # =========================================================
+
+        widget.setStyleSheet("""
+            #startScreen {
+                background-color: #0a0a0a;
+            }
+
+            #title {
+                color: #f5f5f5;
+                font-size: 34px;
+                font-weight: 600;
+            }
+
+            #subtitle {
+                color: #8a8a8a;
+                font-size: 15px;
+            }
+
+            #flightCard {
+                background-color: #111111;
+                border: 1px solid #242424;
+                border-radius: 14px;
+            }
+
+            #listHeader {
+                color: #e5e5e5;
+                font-size: 18px;
+                font-weight: 600;
+                padding-bottom: 5px;
+            }
+
+            #flightList {
+                background-color: #0a0a0a;
+                border: 1px solid #242424;
+                border-radius: 10px;
+                padding: 8px;
+                outline: none;
+                color: #e5e5e5;
+                font-size: 15px;
+            }
+
+            #flightList::item {
+                background-color: #161616;
+                border: 1px solid #252525;
+                border-radius: 8px;
+                padding: 14px;
+                margin: 2px 0px;
+            }
+
+            #flightList::item:hover {
+                background-color: #202020;
+                border: 1px solid #353535;
+            }
+
+            #flightList::item:selected {
+                background-color: #2a2a2a;
+                border: 1px solid #505050;
+                color: #ffffff;
+            }
+
+            #info {
+                color: #666666;
+                font-size: 13px;
+            }
+        """)
 
         return widget
     

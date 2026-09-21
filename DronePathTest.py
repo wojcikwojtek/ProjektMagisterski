@@ -18,7 +18,7 @@ def turning_radius(phi, va, load_factor, g = 9.81):
     return va**2 / (g * (-np.sin(phi) + np.sqrt(load_factor**2 + np.sin(phi)**2 - 1.0)))
 
 def residual(
-    x,
+    X,
     X0,
     Xf,
     v1,
@@ -26,7 +26,7 @@ def residual(
     va,
     nmax
 ):
-    x = x / np.linalg.norm(x)
+    x = X / np.linalg.norm(X)
 
     gamma1 = np.arccos(
         np.clip(v1 @ x, -1.0, 1.0)
@@ -63,6 +63,8 @@ def residual(
     lhs = lam * x
 
     return lhs - rhs
+
+    # return X - rhs
 
 def compute_path(X0, Xf, v_start, v_end, va, nmax):
     guess = Xf - X0
@@ -195,35 +197,35 @@ def convert_ecef_to_geodetic(X, Y, Z):
 
     return lat, lon, height
 
-waypoints = [
-    ("Warsaw",   52.2297, 21.0122, 120),
-    ("Gdansk",   54.3520, 18.6466, 120),
-    ("Szczecin", 53.4285, 14.5528, 120),
-    ("Berlin",   52.5200, 13.4050, 120),
-]
+# waypoints = [
+#     ("Warsaw",   52.2297, 21.0122, 120),
+#     ("Gdansk",   54.3520, 18.6466, 120),
+#     ("Szczecin", 53.4285, 14.5528, 120),
+#     ("Berlin",   52.5200, 13.4050, 120),
+# ]
 
 # va = 15.0      # m/s
 # nmax = 1.2002
 # g = 9.81
 
-# # X0 = np.array([0.0, 0.0, 0.0])
-# X0 = np.array(convert_geodetic_to_ecef(52.2297, 21.0122, 120))
-# # v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
-# # X1 = np.array([-300.0, 400.0, 500.0])
-# X1 = np.array(convert_geodetic_to_ecef(54.3520, 18.6466, 120))
-# # v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
-# # X2 = np.array([100.0, 200.0, 600.0])
-# # X2 = np.array(convert_geodetic_to_ecef(53.4285, 14.5528, 120))
-# # v3 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+# X0 = np.array([0.0, 0.0, 0.0])
+# # # X0 = np.array(convert_geodetic_to_ecef(52.2297, 21.0122, 120))
+# v1 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+# X1 = np.array([-300.0, 400.0, 500.0])
+# # # X1 = np.array(convert_geodetic_to_ecef(54.3520, 18.6466, 120))
+# v2 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
+# # # X2 = np.array([100.0, 200.0, 600.0])
+# # # X2 = np.array(convert_geodetic_to_ecef(53.4285, 14.5528, 120))
+# # # v3 = np.array([1.0, 1.0, 1.0])/np.sqrt(3)
 
-# direction_raw = X1 - X0 
-# up_0 = X0 / np.linalg.norm(X0)
-# v1_local = direction_raw - np.dot(direction_raw, up_0) * up_0
-# v1 = v1_local / np.linalg.norm(v1_local)
+# # # direction_raw = X1 - X0 
+# # # up_0 = X0 / np.linalg.norm(X0)
+# # # v1_local = direction_raw - np.dot(direction_raw, up_0) * up_0
+# # # v1 = v1_local / np.linalg.norm(v1_local)
 
-# up_1 = X1 / np.linalg.norm(X1)
-# v2_local = direction_raw - np.dot(direction_raw, up_1) * up_1
-# v2 = v2_local / np.linalg.norm(v2_local)
+# # # up_1 = X1 / np.linalg.norm(X1)
+# # # v2_local = direction_raw - np.dot(direction_raw, up_1) * up_1
+# # # v2 = v2_local / np.linalg.norm(v2_local)
 
 # result = compute_path(X0, X1, v1, v2, va, nmax)
 
@@ -264,232 +266,183 @@ waypoints = [
 #     np.cumsum(ds)
 # ])
 
-# #Implementacja krzywej pościgu 
-# time_mouse = cum_s / va 
 
-# def get_mouse_pos(t, time_array, path_array):
-#     if t >= time_array[-1]:
-#         return path_array[-1]
-    
-#     x = np.interp(t, time_array, path_array[:, 0])
-#     y = np.interp(t, time_array, path_array[:, 1])
-#     z = np.interp(t, time_array, path_array[:, 2])
-
-#     return np.array([x, y, z])
-
-# cat_speed = 22.0
-# STEP_SIZE = 1/60
-# TIME = 0.0
-# EPSILON = 2.0 #zasieg "zlapania" w metrach
-
-# cat_pos = X0 + np.array([2000.0, 1000.0, 500.0]) #umieszczamy pocisk w pewnej malej odleglosci od drona
-
-# cat_path = [cat_pos.copy()]
-# mouse_path = [get_mouse_pos(TIME, time_mouse, trajectory)]
-
-# MAX_TIME = time_mouse[-1] * 1.5
-
-# while TIME < MAX_TIME:
-#     mouse_pos = get_mouse_pos(TIME, time_mouse, trajectory)
-
-#     #dystans pomiedzy kotem a mysza
-#     dist = np.linalg.norm(mouse_pos - cat_pos)
-
-#     if dist <= EPSILON:
-#         break 
-
-#     direction = mouse_pos - cat_pos
-#     direction /= np.linalg.norm(direction)
-
-#     # Dystans pokonany w kroku to prędkość * czas (v * dt)
-#     cat_pos += direction * (cat_speed * STEP_SIZE)
-
-#     TIME += STEP_SIZE
-
-#     cat_path.append(cat_pos.copy())
-#     mouse_path.append(mouse_pos.copy())
-
-# cat_path = np.array(cat_path)
-# mouse_path = np.array(mouse_path)
-
-# print(cat_path)
-
-# # # 3. Konfiguracja wykresu 3D
-# # fig = plt.figure(figsize=(10, 8))
-# # ax = fig.add_subplot(111, projection='3d')
-
-# # # Rysowanie poszczególnych segmentów
-# # ax.plot(arc1[:, 0], arc1[:, 1], arc1[:, 2], 'r-', linewidth=2.5, label='Zakręt początkowy')
-# # ax.plot(line[:, 0], line[:, 1], line[:, 2], 'g-', linewidth=2.5, label='Lot prostoliniowy')
-# # ax.plot(arc2[:, 0], arc2[:, 1], arc2[:, 2], 'b-', linewidth=2.5, label='Zakręt końcowy')
-
-# # # ax.plot(arc2_1[:, 0], arc2_1[:, 1], arc2_1[:, 2], 'r-', linewidth=2.5, label='Zakręt początkowy1')
-# # # ax.plot(line_1[:, 0], line_1[:, 1], line_1[:, 2], 'g-', linewidth=2.5, label='Lot prostoliniowy1')
-# # # ax.plot(arc3[:, 0], arc3[:, 1], arc3[:, 2], 'b-', linewidth=2.5, label='Zakręt końcowy1')
-
-# # # Zaznaczenie punktów kluczowych
-# # ax.scatter(*X0, color='black', s=60, label='X0 (Start)', zorder=5)
-# # ax.scatter(*X1, color='black', s=60, label='Xf (Koniec)', zorder=5)
-# # ax.scatter(*P1, color='orange', s=40, label='P1 (Koniec zakrętu 1)')
-# # ax.scatter(*P2, color='purple', s=40, label='P2 (Początek zakrętu 2)')
-
-# # # ax.scatter(*X1, color='black', s=60, label='X1 (Start)', zorder=5)
-# # # ax.scatter(*X2, color='black', s=60, label='X2 (Koniec)', zorder=5)
-# # # ax.scatter(*P2_1, color='orange', s=40, label='P2_1 (Koniec zakrętu 1)')
-# # # ax.scatter(*P3, color='purple', s=40, label='P3 (Początek zakrętu 2)')
-
-# # # Opisy osi i legenda
-# # ax.set_xlabel('Oś X [m]')
-# # ax.set_ylabel('Oś Y [m]')
-# # ax.set_zlabel('Oś Z [m]')
-# # ax.set_title('Wizualizacja Trajektorii Lotu Drona 3D')
-# # ax.legend()
-
-# # # Wyświetlenie wykresu
-# # plt.tight_layout()
-
-# # # total_length = cum_s[-1]
-# # # total_time = total_length / va
-
-# # # drone, = ax.plot(
-# # #     [trajectory[0,0]],
-# # #     [trajectory[0,1]],
-# # #     [trajectory[0,2]],
-# # #     'ro',
-# # #     markersize=15
-# # # )
-
-# # # fps = 30
-# # # nframes = int(total_time * fps)
-
-# # # def update(frame):
-# # #     t = frame / fps 
-
-# # #     t = t * 1000
-
-# # #     s = va * t 
-
-# # #     if s >= total_length:
-# # #         s = total_length
-
-# # #     idx = np.searchsorted(cum_s, s)
-
-# # #     if idx == 0:
-# # #         pos = trajectory[0]
-
-# # #     elif idx >= len(trajectory):
-# # #         pos = trajectory[-1]
-
-# # #     else:
-# # #         s0 = cum_s[idx - 1]
-# # #         s1 = cum_s[idx]
-
-# # #         alpha = (s - s0) / (s1 - s0)
-
-# # #         pos = (
-# # #             (1 - alpha) * trajectory[idx - 1]
-# # #             + alpha * trajectory[idx]
-# # #         )
-    
-# # #     drone.set_data([pos[0]], [pos[1]])
-# # #     drone.set_3d_properties([pos[2]])
-
-# # #     return drone,
-
-# # # ani = FuncAnimation(
-# # #     fig,
-# # #     update,
-# # #     frames=nframes,
-# # #     interval=1000/fps,
-# # #     blit=False
-# # # )
-
-# # plt.show()
-
-# fig = plt.figure(figsize=(12, 10))
+# # 3. Konfiguracja wykresu 3D
+# fig = plt.figure(figsize=(10, 8))
 # ax = fig.add_subplot(111, projection='3d')
 
-# # trajektoria myszy (drona)
-# ax.plot(
-#     trajectory[:,0],
-#     trajectory[:,1],
-#     trajectory[:,2],
-#     'b',
-#     linewidth=3,
-#     label='Mysz (trajektoria drona)'
-# )
+# # Rysowanie poszczególnych segmentów
+# ax.plot(arc1[:, 0], arc1[:, 1], arc1[:, 2], 'r-', linewidth=2.5, label='Zakręt początkowy')
+# ax.plot(line[:, 0], line[:, 1], line[:, 2], 'g-', linewidth=2.5, label='Lot prostoliniowy')
+# ax.plot(arc2[:, 0], arc2[:, 1], arc2[:, 2], 'b-', linewidth=2.5, label='Zakręt końcowy')
 
-# # trajektoria kota
-# ax.plot(
-#     cat_path[:,0],
-#     cat_path[:,1],
-#     cat_path[:,2],
-#     'r',
-#     linewidth=3,
-#     label='Kot (krzywa pościgu)'
-# )
+# # ax.plot(arc2_1[:, 0], arc2_1[:, 1], arc2_1[:, 2], 'r-', linewidth=2.5, label='Zakręt początkowy1')
+# # ax.plot(line_1[:, 0], line_1[:, 1], line_1[:, 2], 'g-', linewidth=2.5, label='Lot prostoliniowy1')
+# # ax.plot(arc3[:, 0], arc3[:, 1], arc3[:, 2], 'b-', linewidth=2.5, label='Zakręt końcowy1')
 
-# # pozycje startowe
-# ax.scatter(
-#     *trajectory[0],
-#     color='blue',
-#     s=80,
-#     label='Start myszy'
-# )
+# # Zaznaczenie punktów kluczowych
+# ax.scatter(*X0, color='black', s=60, label='X0 (Start)', zorder=5)
+# ax.scatter(*X1, color='black', s=60, label='Xf (Koniec)', zorder=5)
+# ax.scatter(*P1, color='orange', s=40, label='P1 (Koniec zakrętu 1)')
+# ax.scatter(*P2, color='purple', s=40, label='P2 (Początek zakrętu 2)')
 
-# ax.scatter(
-#     *cat_path[0],
-#     color='red',
-#     s=80,
-#     label='Start kota'
-# )
+# # ax.scatter(*X1, color='black', s=60, label='X1 (Start)', zorder=5)
+# # ax.scatter(*X2, color='black', s=60, label='X2 (Koniec)', zorder=5)
+# # ax.scatter(*P2_1, color='orange', s=40, label='P2_1 (Koniec zakrętu 1)')
+# # ax.scatter(*P3, color='purple', s=40, label='P3 (Początek zakrętu 2)')
 
-# # pozycje końcowe
-# ax.scatter(
-#     *mouse_path[-1],
-#     color='cyan',
-#     s=80,
-#     label='Pozycja myszy'
-# )
-
-# ax.scatter(
-#     *cat_path[-1],
-#     color='darkred',
-#     s=80,
-#     label='Pozycja kota'
-# )
-
-# ax.set_xlabel('X [m]')
-# ax.set_ylabel('Y [m]')
-# ax.set_zlabel('Z [m]')
-
-# ax.set_title('Pościg kota za myszą')
-
+# # Opisy osi i legenda
+# ax.set_xlabel('Oś X [m]')
+# ax.set_ylabel('Oś Y [m]')
+# ax.set_zlabel('Oś Z [m]')
+# ax.set_title('Wizualizacja Trajektorii Lotu Drona 3D')
 # ax.legend()
 
-# # zachowanie proporcji osi
-# all_points = np.vstack([
-#     trajectory,
-#     cat_path
-# ])
-
-# x_limits = [all_points[:,0].min(), all_points[:,0].max()]
-# y_limits = [all_points[:,1].min(), all_points[:,1].max()]
-# z_limits = [all_points[:,2].min(), all_points[:,2].max()]
-
-# x_range = x_limits[1] - x_limits[0]
-# y_range = y_limits[1] - y_limits[0]
-# z_range = z_limits[1] - z_limits[0]
-
-# max_range = max(x_range, y_range, z_range)
-
-# x_mid = np.mean(x_limits)
-# y_mid = np.mean(y_limits)
-# z_mid = np.mean(z_limits)
-
-# ax.set_xlim(x_mid - max_range/2, x_mid + max_range/2)
-# ax.set_ylim(y_mid - max_range/2, y_mid + max_range/2)
-# ax.set_zlim(z_mid - max_range/2, z_mid + max_range/2)
-
+# # Wyświetlenie wykresu
 # plt.tight_layout()
+
+# # # # total_length = cum_s[-1]
+# # # # total_time = total_length / va
+
+# # # # drone, = ax.plot(
+# # # #     [trajectory[0,0]],
+# # # #     [trajectory[0,1]],
+# # # #     [trajectory[0,2]],
+# # # #     'ro',
+# # # #     markersize=15
+# # # # )
+
+# # # # fps = 30
+# # # # nframes = int(total_time * fps)
+
+# # # # def update(frame):
+# # # #     t = frame / fps 
+
+# # # #     t = t * 1000
+
+# # # #     s = va * t 
+
+# # # #     if s >= total_length:
+# # # #         s = total_length
+
+# # # #     idx = np.searchsorted(cum_s, s)
+
+# # # #     if idx == 0:
+# # # #         pos = trajectory[0]
+
+# # # #     elif idx >= len(trajectory):
+# # # #         pos = trajectory[-1]
+
+# # # #     else:
+# # # #         s0 = cum_s[idx - 1]
+# # # #         s1 = cum_s[idx]
+
+# # # #         alpha = (s - s0) / (s1 - s0)
+
+# # # #         pos = (
+# # # #             (1 - alpha) * trajectory[idx - 1]
+# # # #             + alpha * trajectory[idx]
+# # # #         )
+    
+# # # #     drone.set_data([pos[0]], [pos[1]])
+# # # #     drone.set_3d_properties([pos[2]])
+
+# # # #     return drone,
+
+# # # # ani = FuncAnimation(
+# # # #     fig,
+# # # #     update,
+# # # #     frames=nframes,
+# # # #     interval=1000/fps,
+# # # #     blit=False
+# # # # )
+
+# # # plt.show()
+
+# # fig = plt.figure(figsize=(12, 10))
+# # ax = fig.add_subplot(111, projection='3d')
+
+# # # trajektoria myszy (drona)
+# # ax.plot(
+# #     trajectory[:,0],
+# #     trajectory[:,1],
+# #     trajectory[:,2],
+# #     'b',
+# #     linewidth=3,
+# #     label='Mysz (trajektoria drona)'
+# # )
+
+# # # trajektoria kota
+# # ax.plot(
+# #     cat_path[:,0],
+# #     cat_path[:,1],
+# #     cat_path[:,2],
+# #     'r',
+# #     linewidth=3,
+# #     label='Kot (krzywa pościgu)'
+# # )
+
+# # # pozycje startowe
+# # ax.scatter(
+# #     *trajectory[0],
+# #     color='blue',
+# #     s=80,
+# #     label='Start myszy'
+# # )
+
+# # ax.scatter(
+# #     *cat_path[0],
+# #     color='red',
+# #     s=80,
+# #     label='Start kota'
+# # )
+
+# # # pozycje końcowe
+# # ax.scatter(
+# #     *mouse_path[-1],
+# #     color='cyan',
+# #     s=80,
+# #     label='Pozycja myszy'
+# # )
+
+# # ax.scatter(
+# #     *cat_path[-1],
+# #     color='darkred',
+# #     s=80,
+# #     label='Pozycja kota'
+# # )
+
+# # ax.set_xlabel('X [m]')
+# # ax.set_ylabel('Y [m]')
+# # ax.set_zlabel('Z [m]')
+
+# # ax.set_title('Pościg kota za myszą')
+
+# # ax.legend()
+
+# # # zachowanie proporcji osi
+# # all_points = np.vstack([
+# #     trajectory,
+# #     cat_path
+# # ])
+
+# # x_limits = [all_points[:,0].min(), all_points[:,0].max()]
+# # y_limits = [all_points[:,1].min(), all_points[:,1].max()]
+# # z_limits = [all_points[:,2].min(), all_points[:,2].max()]
+
+# # x_range = x_limits[1] - x_limits[0]
+# # y_range = y_limits[1] - y_limits[0]
+# # z_range = z_limits[1] - z_limits[0]
+
+# # max_range = max(x_range, y_range, z_range)
+
+# # x_mid = np.mean(x_limits)
+# # y_mid = np.mean(y_limits)
+# # z_mid = np.mean(z_limits)
+
+# # ax.set_xlim(x_mid - max_range/2, x_mid + max_range/2)
+# # ax.set_ylim(y_mid - max_range/2, y_mid + max_range/2)
+# # ax.set_zlim(z_mid - max_range/2, z_mid + max_range/2)
+
+# # plt.tight_layout()
 # plt.show()
